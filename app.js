@@ -5,7 +5,7 @@ var express = require("express");
 const cors = require('cors');
 
 // Defining OpenAI API key
-const OPENAI_API_KEY = "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"
+const OPENAI_API_KEY = "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"
 
 // Creating OpenAI API configuration object
 const configuration = new Configuration({
