@@ -1,19 +1,21 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, abort
 from . import db
-from flask import Flask, request, jsonify, render_template
 import openai
+from .models import History
 from flask_cors import CORS
+from flask_login import current_user, login_required
+from datetime import datetime
 
 
 main = Blueprint('main', __name__)
-app = Flask(__name__)
+# app = Flask(__name__)
 
-# Define your OpenAI API key
-OPENAI_API_KEY = "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"
+# Define OpenAI API key
+OPENAI_API_KEY = "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"
 openai.api_key = OPENAI_API_KEY
 
 # Enable CORS
-CORS(app)
+# CORS(app)
 
 
 def recommend_song(entry):
@@ -42,7 +44,7 @@ def recommend_song(entry):
     # Building a new OpenAI API prompt based on the song recommendation
     print('song recommendation', response)
     song_title = response.choices[0].text.strip()
-    prompt2 = f"What is the lyric part that resonates with {entry} in {song_title}? Respond only with the lyrics"
+    prompt2 = f"What is the lyric part that resonates with {entry} in {song_title}? Respond in the form: lyrics from song by artist"
     print('lyrics prompt', prompt2)
 
     # Calling the OpenAI API to generate a response based on the new prompt
@@ -118,10 +120,22 @@ def app_main(request):
 
 
 @main.route('/', methods=['POST', 'GET'])
+@login_required
 def home():
     if request.method == 'POST':
         data = app_main(request)
-        #return render_template('index.html', data=data)
+        
+        # Store history
+        new_history = History(
+            date_time=datetime.utcnow(),
+            diary_entry=request.json.get('mood'),
+            generated_image=data['img_url'],
+            song_snippet=data['song'],
+            user_id=current_user.id  # assuming your User model has an id field
+        )
+        db.session.add(new_history)
+        db.session.commit()
+        
         return jsonify(data)
     return render_template('index.html', data=None)
 
@@ -129,8 +143,29 @@ def home():
 @main.route('/')
 def index():
     return render_template('index.html')
-'''
+
 
 @main.route('/profile')
+@login_required
 def profile():
-    return render_template('profile.html')
+    return render_template('profile.html', username=current_user.name)
+'''
+
+
+@main.route('/profile')
+@login_required
+def profile():
+    user_history = History.query.filter_by(user_id=current_user.id).order_by(History.date_time.desc()).all()
+    return render_template('profile.html', user_name=current_user.name, history=user_history)
+
+
+@main.route('/delete_history/<int:history_id>')
+@login_required
+def delete_history(history_id):
+    record = History.query.get_or_404(history_id)
+    if record.user_id != current_user.id:
+        abort(403)  # Forbidden access
+    db.session.delete(record)
+    db.session.commit()
+    flash('Record deleted.', 'success')
+    return redirect(url_for('main.profile'))

@@ -13,6 +13,12 @@
 
   <button onclick="getRecommendation()">Get Recommendation</button>
 
+  <!-- Loading Icon -->
+  <div id="loading" style="display:none;">
+    <img src="src/loading.gif" alt="Loading..." />
+    <p>Loading...</p>
+  </div>
+
   <div id="output">
     {% if data %}
         <h2>Recommended Song:</h2>
