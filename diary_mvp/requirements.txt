@@ -1,0 +1,5 @@
+flask
+openai
+spacy
+flask-cors
+flask-login

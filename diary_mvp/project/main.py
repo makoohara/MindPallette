@@ -5,6 +5,8 @@ from .models import History
 from flask_cors import CORS
 from flask_login import current_user, login_required
 from datetime import datetime
+import spacy
+from collections import Counter
 
 
 main = Blueprint('main', __name__)
@@ -65,29 +67,40 @@ def recommend_song(entry):
     return response_text
 
 
+
+# Load the spaCy model
+nlp = spacy.load("en_core_web_sm")
+
+def extract_keywords_spacy(text):
+    # Process the text with spaCy
+    doc = nlp(text)
+
+    # Extract entities and nouns as keywords
+    keywords = [token.text.lower() for token in doc if token.pos_ in ['NOUN', 'PROPN']]
+    entities = [entity.text.lower() for entity in doc.ents]
+
+    # Combine keywords and entities
+    all_keywords = keywords + entities
+
+    return all_keywords
+
+def weight_keywords(keywords):
+    # Simple weighting based on frequency
+    weighted_keywords = Counter(keywords)
+    return weighted_keywords
+
+def create_image_prompt(weighted_keywords):
+    # Constructing the prompt
+    prompt_parts = [word for word, _ in weighted_keywords.most_common(3)]
+    return 'Artistic style with a color scheme of ' + ', '.join(prompt_parts)
+
 def create_prompt(entry):
-    prompt1 = f"Here is a diary entry: {entry}. Imagine a response story to this diary entry that will give a new perspective to the writer, and describe it with three words: object or location, color, and emotion. Only return the three words"
+    keywords = extract_keywords_spacy(entry)
+    weighted_keywords = weight_keywords(keywords)
+    prompt = create_image_prompt(weighted_keywords)
+    print('Image generation prompt:', prompt)
+    return prompt
 
-    # Use the GPT API to create a prompt designated for DALL-E
-    response1 = openai.Completion.create(
-        engine="text-davinci-003",  # use GPT 3 engine
-        prompt=prompt1,
-        max_tokens=100  # Adjust the desired length of the generated text
-    )
-
-    res1 = response1.choices[0].text.strip()
-    print('chatGPT prompt: ', res1, 'end')
-    '''
-    prompt2 = f"make a list of the most essential three words from this: {res1}"
-    response2 = openai.Completion.create(
-        engine="text-davinci-003",  # use GPT 3 engine
-        prompt=prompt2,
-        max_tokens=100  # Adjust the desired length of the generated text
-    )
-    res2 = response2.choices[0].text.strip()
-    print('cleaned prompt: ', res2)
-    '''
-    return res1
 
 
 def generate_image_url(prompt):
