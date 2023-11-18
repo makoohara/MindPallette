@@ -3,3 +3,4 @@ openai
 spacy
 flask-cors
 flask-login
+python-dotenv

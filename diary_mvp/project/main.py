@@ -6,15 +6,26 @@ from flask_cors import CORS
 from flask_login import current_user, login_required
 from datetime import datetime
 import spacy
+#import en_core_web_sm
 from collections import Counter
+from dotenv import load_dotenv
+import os
 
+load_dotenv
 
 main = Blueprint('main', __name__)
 # app = Flask(__name__)
 
 # Define OpenAI API key
-OPENAI_API_KEY = "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"
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+if not OPENAI_API_KEY:
+    raise ValueError("No OpenAI API key set as environment variable")
 openai.api_key = OPENAI_API_KEY
+
+# Load the spaCy model
+# nlp = spacy.load("en_core_web_sm")
+
+nlp = spacy.load('/Users/oharamako/Library/Python/3.8/lib/python/site-packages/en_core_web_sm/en_core_web_sm-3.7.1')
 
 # Enable CORS
 # CORS(app)
@@ -65,11 +76,6 @@ def recommend_song(entry):
     print('lyrics response', response_text)
 
     return response_text
-
-
-
-# Load the spaCy model
-nlp = spacy.load("en_core_web_sm")
 
 def extract_keywords_spacy(text):
     # Process the text with spaCy
