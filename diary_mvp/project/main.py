@@ -11,7 +11,7 @@ from collections import Counter
 from dotenv import load_dotenv
 import os
 
-load_dotenv
+load_dotenv()
 
 main = Blueprint('main', __name__)
 # app = Flask(__name__)
@@ -108,7 +108,6 @@ def create_prompt(entry):
     return prompt
 
 
-
 def generate_image_url(prompt):
     # Use the GPT API to create a prompt designated for DALL-E
     dalle_prompt = prompt + ' ,artistic'
@@ -131,6 +130,7 @@ def app_main(request):
         entry = request.json.get('mood')
         data['song'] = recommend_song(entry)
         data['img_url'] = generate_image_url(create_prompt(entry))
+        print(data)
         return data
 
     except Exception as e:
@@ -143,7 +143,7 @@ def app_main(request):
 def home():
     if request.method == 'POST':
         data = app_main(request)
-        
+        print(data)
         # Store history
         new_history = History(
             date_time=datetime.utcnow(),
