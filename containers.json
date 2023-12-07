@@ -1,0 +1,8 @@
+{
+    "diary": {
+        "image": ":diary.diary.2",
+        "ports": {
+            "5000": "HTTP"
+        }
+    }
+}

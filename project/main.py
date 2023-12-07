@@ -12,15 +12,19 @@ import math
 import nltk
 from nltk.corpus import stopwords
 from collections import Counter
+from dotenv import load_dotenv
+import os
+
 
 # Ensure NLTK resources are downloaded
 nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
 nltk.download('stopwords')
+load_dotenv()  # load the variables from .env
 
 main = Blueprint('main', __name__)
 # Define OpenAI API key
-OPENAI_API_KEY = "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"
+OPENAI_API_KEY = os.getenv("OPENAPI_KEY")
 
 class DiaryProcessor:
     diary_stop_words = [
