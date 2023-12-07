@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block content %}
+  <link rel="stylesheet" href="styles.css" />
+
+  <h1 class="title">
+    Let's Art with Your Journals
+  </h1>
+
+  <label for="mood">Enter a mood:</label>
+  <input type="text" id="mood" style="width: 600px; height: 150px">
+  <br/>
+  
+  <label for="genre">Enter a music genre:</label>
+  <input type="text" id="genre">
+  
+  <button onclick="getRecommendation()">
+    Get Recommendation
+  </button>
+
+  <!-- Loading Icon -->
+  <div id="loading" style="display:none;">
+    <img src="../src/loading.gif" alt="Loading..." />
+    <p>Loading...</p>
+  </div>
+
+  <div id="output">
+    {% if data %}
+        <h2>Recommended Song:</h2>
+        <p>{{ data.song }}</p>
+        <h2>Image:</h2>
+        <img src="{{ data.img_url }}" alt="Image">
+    {% endif %}
+  </div>
+
+  <script>
+    function getRecommendation() {
+      // Show loading icon
+      document.getElementById('loading').style.display = 'block';
+
+      // Get the input values
+      const genre = document.getElementById("genre").value;
+      const mood = document.getElementById("mood").value;
+
+      // Define the music recommendations based on the input values
+      fetch("http://127.0.0.1:5000/", {
+          method: "POST",
+          body: JSON.stringify({
+              mood: mood,
+              genre: genre,
+          }),
+          headers: {
+              "Content-type": "application/json; charset=UTF-8"
+          }
+      })
+      .then((res) => {
+          if (!res.ok) {
+              throw new Error(`Server responded with status: ${res.status}`);
+          }
+          return res.json();
+      })
+
+      .then((data) => {
+            // Access data from backend
+            const song = data.song;
+            const img_url = data.img_url;
+
+            document.getElementById("output").innerHTML = 
+                  `<h2>Recommended Song:</h2> <p>${song}</p> <h2>Image:</h2><img src="${img_url}" alt="Image">`;
+            // Hide loading icon
+            document.getElementById('loading').style.display = 'none';
+  
+          })
+      .catch((error) => {
+          console.error("Error:", error);
+          document.getElementById("output").innerHTML = `<p style="color: red;">Error fetching data. Please try again later.</p>`;
+      });
+    }
+  </script>
+{% endblock %}
