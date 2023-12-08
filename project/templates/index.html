@@ -26,28 +26,66 @@
   <div id="output">
     {% if data %}
         <h2>Recommended Song:</h2>
-        <p>{{ data.song }}</p>
+        <p id="recommendedSong">{{ data.song }}</p>
+        <button onclick="playOnSpotify()">
+          Play on Spotify
+        </button>
         <h2>Image:</h2>
         <img src="{{ data.img_url }}" alt="Image">
     {% endif %}
   </div>
 
   <script>
-    function getRecommendation() {
-      // Show loading icon
-      document.getElementById('loading').style.display = 'block';
+  function getRecommendation() {
+    // Show loading icon
+    document.getElementById('loading').style.display = 'block';
 
-      // Get the input values
-      const genre = document.getElementById("genre").value;
-      const mood = document.getElementById("mood").value;
+    // Get the input values
+    const genre = document.getElementById("genre").value;
+    const mood = document.getElementById("mood").value;
 
-      // Define the music recommendations based on the input values
-      fetch("http://127.0.0.1:5000/", {
+    // Define the music recommendations based on the input values
+    fetch("/home", {
+        method: "POST",
+        body: JSON.stringify({
+            mood: mood,
+            genre: genre,
+        }),
+        headers: {
+            "Content-type": "application/json; charset=UTF-8"
+        }
+    })
+    .then((res) => {
+        if (!res.ok) {
+            throw new Error(`Server responded with status: ${res.status}`);
+        }
+        return res.json();
+    })
+    .then((data) => {
+        // Access data from backend
+        const song = data.song;
+        const img_url = data.img_url;
+
+        // Update the output div
+        const outputDiv = document.getElementById("output");
+        outputDiv.innerHTML = 
+              `<h2>Recommended Song:</h2> <p id="recommendedSong">${song}</p> <button onclick="playOnSpotify()">Play on Spotify</button> <h2>Image:</h2><img src="${img_url}" alt="Image">`;
+
+        // Hide loading icon
+        document.getElementById('loading').style.display = 'none';
+    })
+    .catch((error) => {
+        console.error("Error:", error);
+        document.getElementById("output").innerHTML = `<p style="color: red;">Error fetching data. Please try again later.</p>`;
+    });
+    }
+
+
+    function playOnSpotify() {
+      const song = document.getElementById("recommendedSong").innerText;
+      fetch("/playsong", {
           method: "POST",
-          body: JSON.stringify({
-              mood: mood,
-              genre: genre,
-          }),
+          body: JSON.stringify({ song: song }),
           headers: {
               "Content-type": "application/json; charset=UTF-8"
           }
@@ -58,22 +96,17 @@
           }
           return res.json();
       })
-
       .then((data) => {
-            // Access data from backend
-            const song = data.song;
-            const img_url = data.img_url;
-
-            document.getElementById("output").innerHTML = 
-                  `<h2>Recommended Song:</h2> <p>${song}</p> <h2>Image:</h2><img src="${img_url}" alt="Image">`;
-            // Hide loading icon
-            document.getElementById('loading').style.display = 'none';
-  
-          })
+          if (data.url) {
+              // Open the song URL in a new tab
+              window.open(data.url, '_blank');
+          } else {
+              console.error("Song URL not found");
+          }
+      })
       .catch((error) => {
           console.error("Error:", error);
-          document.getElementById("output").innerHTML = `<p style="color: red;">Error fetching data. Please try again later.</p>`;
       });
-    }
+  }
   </script>
 {% endblock %}

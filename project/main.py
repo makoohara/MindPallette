@@ -14,6 +14,8 @@ from nltk.corpus import stopwords
 from collections import Counter
 from dotenv import load_dotenv
 import os
+import spotipy
+from spotipy.oauth2 import SpotifyOAuth
 
 
 # Ensure NLTK resources are downloaded
@@ -25,6 +27,11 @@ load_dotenv()  # load the variables from .env
 main = Blueprint('main', __name__)
 # Define OpenAI API key
 OPENAI_API_KEY = os.getenv("OPENAPI_KEY")
+# User credentials and Spotify setup
+spotify_client_id = os.getenv("SPOTIFY_CLIENT_ID") 
+spotify_client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
+spotify_redirect_uri = "http://google.com/callback/"
+spotify_scope = "user-read-playback-state,user-modify-playback-state"
 
 class DiaryProcessor:
     diary_stop_words = [
@@ -91,7 +98,7 @@ class DiaryProcessor:
 
     def recommend_song(self, entry, genre=None):
         # Building the OpenAI API prompt based on the request body
-        prompt = f"Empathize this diary entry with a song: {entry} . Recommend me a song, select 30 seconds from the song and return the song name, artist, and song name only."
+        prompt = f"Empathize this diary entry with a song: {entry} . Recommend me a song. Return the song name and artist only."
 
         # Adding genre information to the prompt if available
         genre = request.json.get('genre')
@@ -140,42 +147,6 @@ class DiaryProcessor:
         image_url = self.generate_image_url(self.create_prompt(entry))
         return {'song': song, 'img_url': image_url}
 
-# Usage example
-
-# client = OpenAI(api_key=OPENAI_API_KEY)
-
-
-
-
-
-# def analyze_sentiment(text):
-#     analysis = TextBlob(text)
-#     polarity = analysis.sentiment.polarity
-#     if polarity < 0: 
-#         return -1 * math.ceil(abs(polarity) * 5)
-#     else: 
-#         return math.ceil(polarity * 5)
-
-# def extract_nouns(text):
-#     tokens = nltk.word_tokenize(text)
-#     tags = nltk.pos_tag(tokens)
-#     nouns = [word for word, pos in tags if pos in ["NN", "NNS", "NNP", "NNPS"] and word.lower() not in stopwords.words('english')]
-#     for noun in list(nouns):
-#         if noun.lower() in diary_stop_words:
-#             nouns.remove(noun)
-#     return nouns
-
-
-
-# def create_prompt(entry):
-#     scaled_score = analyze_sentiment(entry)
-#     nouns = extract_nouns(entry)
-#     prompt = select_image_attributes(scaled_score, nouns)
-#     print("Image Attributes:", prompt)
-#     return prompt
-
-
-
 
 def app_main(request):
     try:
@@ -189,7 +160,7 @@ def app_main(request):
         return jsonify({'error': str(e)}), 500
 
 
-@main.route('/', methods=['POST', 'GET'])
+@main.route('/home', methods=['POST', 'GET'])
 @login_required
 def home():
     if request.method == 'POST':
@@ -226,4 +197,39 @@ def delete_history(history_id):
     db.session.delete(record)
     db.session.commit()
     flash('Record deleted.', 'success')
+    return redirect(url_for('main.profile'))
+
+# Create OAuth Object
+oauth_object = spotipy.SpotifyOAuth(spotify_client_id, spotify_client_secret, spotify_redirect_uri, scope=spotify_scope)
+# Create token
+token_dict = oauth_object.get_access_token()
+token = token_dict['access_token']
+# Create Spotify Object
+spotifyObject = spotipy.Spotify(auth=token)
+
+def search_and_play_song(search_keyword):
+    # Search for the Song.
+    search_results = spotifyObject.search(search_keyword, 1, 0, "track")
+    # Get required data from JSON response.
+    tracks_dict = search_results['tracks']
+    tracks_items = tracks_dict['items']
+    if tracks_items:
+        return tracks_items[0]['external_urls']['spotify']
+    else:
+        return None
+
+@main.route('/playsong', methods=['POST'])
+@login_required
+def play_song():
+    data = request.json
+    song_name = data.get('song')
+    song_url = search_and_play_song(song_name)
+    if song_url:
+        return jsonify({'url': song_url})
+    else:
+        return jsonify({'error': 'Song not found'}), 404
+
+@main.route('/')
+@login_required
+def redirect_to_profile():
     return redirect(url_for('main.profile'))
