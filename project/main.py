@@ -10,31 +10,38 @@ from textblob import TextBlob
 import random
 import math
 import nltk
+# resources downloaded
+nltk.download('vader_lexicon')
+nltk.download('punkt')
+nltk.download('averaged_perceptron_tagger')
+nltk.download('maxent_ne_chunker')
+nltk.download('words')
+nltk.download('stopwords')
+from nltk.sentiment import SentimentIntensityAnalyzer
+from nltk.tokenize import word_tokenize
+from nltk.tag import pos_tag
+from nltk.chunk import ne_chunk
 from nltk.corpus import stopwords
+
+
+
 from collections import Counter
 from dotenv import load_dotenv
 import os
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 
-
-# Ensure NLTK resources are downloaded
-nltk.download('punkt')
-nltk.download('averaged_perceptron_tagger')
-nltk.download('stopwords')
-load_dotenv()  # load the variables from .env
+load_dotenv()
 
 main = Blueprint('main', __name__)
 # Define OpenAI API key
-OPENAI_API_KEY = os.getenv("OPENAPI_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # User credentials and Spotify setup
 spotify_client_id = os.getenv("SPOTIFY_CLIENT_ID") 
 spotify_client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
 spotify_redirect_uri = "http://google.com/callback/"
 spotify_scope = "user-read-playback-state,user-modify-playback-state"
-
-class DiaryProcessor:
-    diary_stop_words = [
+diary_stop_words = [
         "I", "me", "my", "mine", "myself",
         "we", "us", "our", "ours", "ourselves",
         "you", "your", "yours", "yourself", "yourselves",
@@ -57,9 +64,11 @@ class DiaryProcessor:
         "needn", "shan", "shouldn", "wasn", "weren", "won", "wouldn",
         "today", "yesterday", "tomorrow", "day", "night", "morning", "evening"
     ]
+class DiaryProcessor:
 
     def __init__(self, openai_api_key):
         self.client = OpenAI(api_key=openai_api_key)
+        self.diary_stop_words = diary_stop_words
 
     def analyze_sentiment(self, text):
         analysis = TextBlob(text)
@@ -69,8 +78,69 @@ class DiaryProcessor:
     def extract_nouns(self, text):
         tokens = nltk.word_tokenize(text)
         tags = nltk.pos_tag(tokens)
-        nouns = [word for word, pos in tags if pos in ["NN", "NNS", "NNP", "NNPS"] and word.lower() not in stopwords.words('english')]
-        return [noun for noun in nouns if noun.lower() not in self.diary_stop_words]
+        #nouns = [word for word, pos in tags if pos in ["NN", "NNS", "NNP", "NNPS"] and word.lower() not in stopwords.words('english')]
+        words = [word.lower() for word in tokens if word.lower() not in stopwords.words('english') and word.lower() not in diary_stop_words]
+        keywords = [word for word, pos in tags if pos in ['NN', 'NNS', 'JJ', 'JJR', 'JJS']]
+        return keywords
+
+        #return [noun for noun in nouns if noun.lower() not in self.diary_stop_words]
+
+    def process_entry_2(self, text):
+        print('pipeline 2 text', text)
+        # Tokenize the entry
+        tokens = word_tokenize(text)
+        print('pipeline 2 tokens', tokens)
+        # Remove stopwords
+        stop_words = set(stopwords.words('english'))
+        filtered_tokens = [word for word in tokens if word.lower() not in stop_words]
+        print('pipeline 2 filtered_tokens', filtered_tokens)
+        # Part-of-Speech Tagging
+        tagged_tokens = pos_tag(filtered_tokens)
+        print('pipeline 2 tagged_tokens', tagged_tokens)
+        # Named Entity Recognition
+        named_entities = ne_chunk(tagged_tokens)
+        print('pipeline 2 named_entities', named_entities)
+        # Extract named entities (people, organizations, locations, etc.)
+        themes = [' '.join(c[0] for c in chunk) for chunk in named_entities if hasattr(chunk, 'label')]
+        print('pipeline 2 themes', themes)
+        # Sentiment Analysis
+        sia = SentimentIntensityAnalyzer()
+        sentiment = sia.polarity_scores(text)
+        print('pipeline 2 sentiment', sentiment)
+        
+        # Extract nouns and adjectives as keywords
+        keywords = [word for word, pos in tagged_tokens if pos in ['NN', 'NNS', 'JJ', 'JJR', 'JJS']]
+        print('pipeline 2 themes, sentiment, keywords', themes, sentiment, keywords)
+        return {
+            'themes': themes,
+            'sentiment_scores': sentiment,
+            'keywords': keywords
+        }
+
+    def create_prompt_2(self, prompt_keywords):
+        system_msg = f"You are an artist expressing an emotion from a diary into an image using Dalle. You will add artistic interpretation to the prompt. "
+        prompt = f"Here are extracted themes, sentiment scores, and keywords form the diary: {prompt_keywords}. Return only the image prompt with this structure: [image type (film, abstract painting, portrait, etc.)] with [description of icon], with [color scheme] and [style]. More specific on art style and format the better."
+        print('inside create_prompt_2 prompt', prompt_keywords)
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "system", "content": system_msg},
+                        {"role": "user", "content": prompt}],
+                temperature=0,
+                top_p=1,
+                frequency_penalty=0,    
+                presence_penalty=0
+            )
+            prompt = response.choices[0].message.content
+            print('pipeline 2 prompt', prompt)
+            return prompt
+        except Exception as e:
+            print(f"Error querying OpenAI for words '{prompt_keywords}': {e}")
+            return "unknown"      
+
+
+
+
 
     def select_image_attributes(self, scaled_score, nouns):
         # Dictionary of image attributes
@@ -142,22 +212,44 @@ class DiaryProcessor:
             print('OpenAI Dalle Error', str(e))
             return jsonify({'OpenAI Dalle Error': str(e)}), 500
 
-    def process_entry(self, entry, genre=None):
+    def process1(self, entry, genre=None):
         song = self.recommend_song(entry, genre)
         image_url = self.generate_image_url(self.create_prompt(entry))
         return {'song': song, 'img_url': image_url}
+    
+    def process2(self, entry, genre=None):
+        print('inside process 2. entry', entry)
+        prompt_keywords = self.process_entry_2(entry)
+        print('prompt_keywords', prompt_keywords)
+        image_url = self.generate_image_url(self.create_prompt_2(prompt_keywords))
+        return {'img_url': image_url}
 
 
 def app_main(request):
     try:
         processor = DiaryProcessor(openai_api_key=OPENAI_API_KEY)
         entry = request.json.get('mood')
-        result = processor.process_entry(entry)
+        result = processor.process1(entry)
+        result2 = processor.process2(entry)
+        print('result2', result2)
         return result
 
     except Exception as e:
         # Handling errors by sending an error response
         return jsonify({'error': str(e)}), 500
+
+def app_2(request):
+    try:
+        processor = DiaryProcessor(openai_api_key=OPENAI_API_KEY)
+        entry = request.json.get('mood')
+        result2 = processor.process2(entry)
+        print('result2', result2)
+        return result2
+
+    except Exception as e:
+        # Handling errors by sending an error response
+        return jsonify({'error': str(e)}), 500
+    
 
 
 @main.route('/home', methods=['POST', 'GET'])
@@ -166,6 +258,7 @@ def home():
     if request.method == 'POST':
         data = app_main(request)
         print('data', data)
+        #print('data2', app_2(request))
         # Store history
         new_history = History(
             date_time=datetime.utcnow(),
@@ -176,7 +269,6 @@ def home():
         )
         db.session.add(new_history)
         db.session.commit()
-        
         return jsonify(data)
     return render_template('index.html', data=None)
 

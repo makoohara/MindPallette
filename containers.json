@@ -2,7 +2,7 @@
     "diary": {
         "image": ":diary.diary.4",
         "ports": {
-            "5000": "HTTP"
+            "9000": "HTTP"
         }
     }
 }

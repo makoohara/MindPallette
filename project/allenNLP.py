@@ -1,78 +1,60 @@
-import spacy
-from spacy import displacy
 from allennlp.predictors.predictor import Predictor
 import allennlp_models.tagging
+import openai
 from openai import OpenAI
-from datetime import datetime
-import random
 from dotenv import load_dotenv
 import os
-import warnings
-from flask import jsonify
-warnings.filterwarnings("ignore")
 
-#load the model
-SRL_MODEL_PATH = "https://storage.googleapis.com/allennlp-public-models/structured-prediction-srl-bert.2020.12.15.tar.gz"
+# Load environment variables and OpenAI API key
+load_dotenv()
+openai_api_key = os.getenv("OPENAI_API_KEY")
+#openai.api_key = openai_api_key
 
-def extract_verbs_and_roles(srl_data):
-    verbs_and_roles = []
-    for verb in srl_data['verbs']:
-        verb_text = verb['verb']
-        roles = []
-        for tag, word in zip(verb['tags'], srl_data['words']):
-            if tag.startswith("B-"):
-                role = tag.split("-")[1]
-                roles.append((role, word))
-        verbs_and_roles.append((verb_text, roles))
-    return verbs_and_roles
-
-
-openai_api_key = os.getenv("OPENAPI_KEY")
+# Load the Semantic Role Labeling model
+srl_model_path = "https://storage.googleapis.com/allennlp-public-models/structured-prediction-srl-bert.2020.12.15.tar.gz"
+predictor = Predictor.from_path(srl_model_path)
 client = OpenAI(api_key=openai_api_key)
-
-def opneai_processing(verb):
-    system_msg = 'You are a helpful assistant who specialize in figurative emotional exploration, especially in translating contexual events to emotional keywords.'
-    prompt = f"What emotion is typically associated with the action '{verb}'?"
-
+def get_emotion_for_verb(verb):
+    """
+    Query ChatGPT for the emotion associated with a specific verb.
+    """
+    system_msg = "You will respond with python object only. "
+    prompt = f"List the emotions typically associated with the action '{verb}' in Python list format. If unknown, take a reasonable guess. Avoid unnecessary words and do not make the response a sentence. return in a format that could directly be used in the code."
     try:
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "system", "content": system_msg},
-                        {"role": "user", "content": prompt}],
+                    {"role": "user", "content": prompt}],
             temperature=0,
             top_p=1,
             frequency_penalty=0,    
             presence_penalty=0
         )
-        song_selection = song_response.choices[0].message.content
-        return song_selection
-    except Exception as e:
-        # Handling errors by sending an error response
-        print('OpenAI Dalle Error', str(e))
-        return jsonify({'OpenAI Dalle Error': str(e)}), 500
+        # response = client.Completion.create(
+        #     engine="gpt-3.5-turbo",
+        #     prompt=prompt,
+        #     max_tokens=50,
+        #     temperature=0.5
+        # )
+        # emotion = response.choices[0].message.content
 
-def map_srl_to_emotion(verbs_and_roles):
-    emotions=[]
-    for verb, roles in verbs_and_roles:
-        emotion = opneai_processing(verb)
-        if emotion:
-            emotions.append(emotion)
+        #emotion = response.choices[0].text.strip()
+        emotion = response.choices[0].message.content
+        return emotion
+    except Exception as e:
+        print(f"Error querying OpenAI for verb '{verb}': {e}")
+        return "unknown"
+
+def extract_verbs_and_query_emotions(sentence):
+    """
+    Extract verbs from a sentence using SRL, then query ChatGPT for associated emotions.
+    """
+    srl_result = predictor.predict(sentence=sentence)
+    verbs = [verb['verb'] for verb in srl_result['verbs']]
+    emotions = [get_emotion_for_verb(verb) for verb in verbs]
     return emotions
 
-predictor = Predictor.from_path(SRL_MODEL_PATH)
-predictions = predictor.predict(sentence="Did Uriah honestly think he could beat the game in under three hours?.")
-print('srl_tags:', predictions)
-verbs_and_roles = extract_verbs_and_roles(predictions)
-print('verbs and roles:', verbs_and_roles)
-print('extracted emotions:', map_srl_to_emotion(verbs_and_roles))
-
-
-
-"""
-{'verbs': [{'verb': 'Did', 'description': '[V: Did] Uriah honestly think he could beat the game in under three hours ? .', 'tags': ['B-V', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O']}, {'verb': 'think', 'description': 'Did [ARG0: Uriah] [ARGM-ADV: honestly] [V: think] [ARG1: he could beat the game in under three hours] ? .', 'tags': ['O', 'B-ARG0', 'B-ARGM-ADV', 'B-V', 'B-ARG1', 'I-ARG1', 'I-ARG1', 'I-ARG1', 'I-ARG1', 'I-ARG1', 'I-ARG1', 'I-ARG1', 'I-ARG1', 'O', 'O']}, {'verb': 'could', 'description': 'Did Uriah honestly think he [V: could] beat the game in under three hours ? .', 'tags': ['O', 'O', 'O', 'O', 'O', 'B-V', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O']}, {'verb': 'beat', 'description': 'Did Uriah honestly think [ARG0: he] [ARGM-MOD: could] [V: beat] [ARG1: the game] [ARGM-TMP: in under three hours] ? .', 'tags': ['O', 'O', 'O', 'O', 'B-ARG0', 'B-ARGM-MOD', 'B-V', 'B-ARG1', 'I-ARG1', 'B-ARGM-TMP', 'I-ARGM-TMP', 'I-ARGM-TMP', 'I-ARGM-TMP', 'O', 'O']}], 'words': ['Did', 'Uriah', 'honestly', 'think', 'he', 'could', 'beat', 'the', 'game', 'in', 'under', 'three', 'hours', '?', '.']}
-
-1. allenNLP -> subtract specifically adjustives near a noun and verbs 
-2. estimate the emotion the person is feeling 
-3. also record the change through time. 
-
-"""
+# Example usage
+sentence = "Did Uriah honestly think he could beat the game in under three hours?"
+emotions = extract_verbs_and_query_emotions(sentence)
+print(f"Extracted emotions: {emotions}")
