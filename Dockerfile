@@ -12,6 +12,13 @@ COPY requirements.txt .
 RUN pip3 install jsonnet
 RUN pip3 install --no-cache-dir -r requirements.txt
 
+RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
+    bash Miniconda3-latest-Linux-x86_64.sh -b -p /home/tools/miniconda && \
+    ln -s /home/tools/miniconda/bin/conda /usr/bin/conda
+#conda activate primertk && \
+RUN conda update -n base conda
+RUN conda install -c conda-forge python=3.9 allennlp
+
 # Copy the current directory contents into the container at /usr/src/app
 COPY . .
 
