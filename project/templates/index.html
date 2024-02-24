@@ -7,53 +7,50 @@
   </h1>
 
   <label for="mood">How are you feeling today?:</label>
-  <input type="text" id="mood" style="width: 600px; height: 150px">
+  <!-- <input type="text" id="mood" style="width: 600px; height: 150px"> -->
+  <textarea class="textarea" placeholder="Write your entry here." rows="20" id="mood" style="width: 600px; height: 150px"></textarea>
   <br/>
   
   <label for="genre">Enter a music genre:</label>
-  <input type="text" id="genre">
+  <!-- <input type="text" id="genre"> -->
+
+  <select id="genre" name="genre" class="select is-normal">
+    <option value="">Select a genre</option>
+    <option value="rock">Rock</option>
+    <option value="pop">Pop</option>
+    <option value="jazz">Jazz</option>
+    <option value="lofi">Lofi</option>
+    <option value="hiphop">Hip Hop</option>
+    <option value="classical">Classical</option>
+    <option value="electronic">Electronic</option>
+    <option value="folk">Folk</option>
+    <option value="country">Country</option>
+    <option value="blues">Blues</option>
+    <option value="reggae">Reggae</option>
+    <option value="metal">Metal</option>
+  </select>
   
-  <button onclick="getRecommendation()">
+  
+  <button class="button is-primary is-normal" onclick="getRecommendation()">
     Get Recommendation
   </button>
 
   <!-- Loading Icon -->
-  <div id="loading" style="display:none;">
-    <img src="../src/loading.gif" alt="Loading..." />
+  <div id="loading" style="display:none; margin-top: 25px">
+
     <p>Loading...</p>
   </div>
 
   <div id="output">
     {% if data %}
-        <div class="fond"> <span class="s1">blog </span><span class="s2">card</span></div>
-        <div class="card">
-        <div class="thumbnail"><img class="left" src="https://cdn2.hubspot.net/hubfs/322787/Mychefcom/images/BLOG/Header-Blog/photo-culinaire-pexels.jpg"/></div>
-        <div class="right">
-            <h1>Why you Need More Magnesium in Your Daily Diet</h1>
-            <img src="{{ data.img_url }}" alt="Image">
-            <!-- <div class="author"><img src="https://randomuser.me/api/portraits/men/95.jpg"/> -->
-            <h2>Igor MARTY</h2>
-            </div>
-            <div class="separator"></div>
-            <p>body text</p>
-        </div>
-        <h5>12</h5>
-        <h6>JANUARY</h6>
-        <ul>
-            <li><i class="fa fa-eye fa-2x"></i></li>
-            <li><i class="fa fa-heart-o fa-2x"></i></li>
-            <li><i class="fa fa-envelope-o fa-2x"></i></li>
-            <li><i class="fa fa-share-alt fa-2x"></i></li>
-        </ul>
-        <div class="fab"><i class="fa fa-arrow-down fa-3x"> </i></div>
-        </div>
-        <!-- <h2>Recommended Song:</h2>
+        
+        <h2>Recommended Song:</h2>
         <p id="recommendedSong">{{ data.song }}</p>
-        <button onclick="playOnSpotify()">
+        <button class="button is-primary" onclick="playOnSpotify()">
           Play on Spotify
         </button>
         <h2>Image:</h2>
-        <img src="{{ data.img_url }}" alt="Image"> -->
+        <img src="{{ data.img_url }}" alt="Image">
     {% endif %}
   </div>
 
@@ -91,7 +88,7 @@
         // Update the output div
         const outputDiv = document.getElementById("output");
         outputDiv.innerHTML = 
-              `<h2>Recommended Song:</h2> <p id="recommendedSong">${song}</p> <button onclick="playOnSpotify()">Play on Spotify</button> <h2>Image:</h2><img src="${img_url}" alt="Image">`;
+              `<h2>Recommended Song:</h2> <p id="recommendedSong">${song}</p> <button class="button is-primary" onclick="playOnSpotify()">Play on Spotify</button> <h2>Image:</h2><img src="${img_url}" alt="Image">`;
 
         // Hide loading icon
         document.getElementById('loading').style.display = 'none';

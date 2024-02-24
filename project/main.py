@@ -359,7 +359,7 @@ def app_main(request):
             if i == 3 or i == 4:
                 prompt = processor.output_cleaning(prompt)
             print('prompt', i, prompt, type(prompt))
-            result = openai_util.generate_image_url(prompt.items())
+            result = openai_util.generate_image_url(prompt)
             print('result', i, result)
         song = openai_util.recommend_song(entry)
         return {'song': song, 'img_url': result}

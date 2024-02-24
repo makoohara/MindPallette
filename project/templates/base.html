@@ -7,29 +7,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>DIARY</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css" />
+    <!-- <link rel="stylesheet" href="styles.css" /> -->
     <style>
-        body {
-            background: linear-gradient(to bottom, #AED6F1, #ABEBC6);
-            background-attachment: fixed;
-            background-size: cover;
-        }
         .navbar-item {
-            color: #196F3D;
+            color: #ffffff;
         }
         .navbar-item:hover {
             color: #F1C40F;
         }
-        .hero-body {
-            background-image: url('https://images.unsplash.com/photo-1569428034239-f9565e32e224?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2958&q=80');
-            background-size: cover;
-            background-position: center;
-            color: #196F3D;
+        .hero {
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            /* height: 100vh; */
+        }
+
+        /* body {
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            height: 100vh;
+        } */
+
+        @keyframes gradient {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
         }
         .container {
-            background-color: rgba(255, 255, 255, 0.8);
+            background-color: rgba(255, 255, 255, 0.6);
             padding: 20px;
             border-radius: 15px;
             box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+        }
+        .hero-head {
+            background-color: rgba(255, 255, 255, 0);
+        }
+        @media screen and (min-width: 1088px){
+        .navbar {
+            align-items: stretch !important;
+            display: flex !important;
+            min-height: 3.25rem;
+        }
+
         }
     </style>
 </head>
@@ -39,7 +65,7 @@
 
         <div class="hero-head">
             <nav class="navbar">
-                <div class="container">
+                <div class="">
                     <div id="navbarMenuHeroA" class="navbar-menu">
                         <div class="navbar-end">
                             <a href="/home" class="navbar-item">
