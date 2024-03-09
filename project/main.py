@@ -259,7 +259,7 @@ class OpenAIUtils:
             return jsonify({'OpenAI GPT-3.5 Error': str(e)}), 500
 
     def generate_parameters(self, processed_data, pipeline):
-        system_msg = 'You are a prompt engineer for Dalle. You adjust parameters based on annotated text inputs and returns parameter as an python object. The goal of the prompt is to visually and figuratively express the emotion in the diary. The more detailed and nuanced the better.'
+        system_msg = 'You are a prompt engineer for Dalle. You improvise or adjust prompts based on annotated/original text inputs and returns parameter as an python object. The goal of the prompt is to visually and figuratively express the emotion in the diary. The more detailed and nuanced the better.'
         parameters = {'main subjects': {'London': 1}, 
                 'secondary subjects': {'orange': 1}, 
                 'aspect ratio': '1:1', 
@@ -274,9 +274,10 @@ class OpenAIUtils:
             sub_icons = processed_data['sub_icons']
             attributes = processed_data['image_attributes']
             prompt = f"main subjects: {main_icons}, secondary subjects: {sub_icons}, attributes: {attributes}"
+            return prompt
         elif pipeline == 2:
             prompt_keywords = processed_data['keywords']
-            prompt = f"Here are extracted themes, sentiment scores, and keywords from the diary: {prompt_keywords}. Return only the image prompt with this structure: [image type (film, abstract painting, portrait, etc.)] with [description of icon], with [color scheme] and [style/artist]. More specific on art style and format the better."
+            prompt = f"Here are extracted themes, sentiment scores, and keywords from the diary: {prompt_keywords}. Return only the image prompt for Dall-E with this structure: [image type (e.g. film, abstract painting, portrait, etc.)] of [description of icon], with [color scheme] and [style/artist]. More specific on art style/detail the better."
         elif pipeline == 3:
             text = processed_data['text']
             prompt = f"Return parameters for a Dalle prompt based on a diary. The parameter structure should look like this: {parameters}. \n\
@@ -286,10 +287,10 @@ class OpenAIUtils:
             sentiments = processed_data['sentiments']
             prompt = f"Return parameters for a Dalle prompt based on a diary. The parameter structure should look like this: {parameters}. \n\
                         Your task is to change the item values of the parameter dictionary to match this annotated text and sentiment states from the diary. {annotations}, {sentiments} \n\
-                        Do not contain any word that may violate OpenAI's use case policy. Do not put any artist names."
+                        Do not put any artist names."
         
         try:
-            print('prompt:', prompt)
+            print('Dalle prompt', pipeline, ":", prompt)
             return self.query(system_msg, prompt)
         except Exception as e:
             # Handling errors by sending an error response
@@ -298,7 +299,6 @@ class OpenAIUtils:
         
     def generate_image_url(self, prompt):
         dalle_prompt = ' '.join(prompt) + ' ,artistic'
-        print('final dalle prompt:', dalle_prompt)
         try:
             response = self.client.images.generate(
                         model="dall-e-3",
@@ -308,7 +308,6 @@ class OpenAIUtils:
                         n=1,
                         )
             img_url = response.data[0].url
-            print('img_url', img_url)
             return img_url
         except Exception as e:
             # Handling errors by sending an error response
@@ -401,14 +400,14 @@ def home():
         db.session.add(new_history)
         db.session.commit()
         return jsonify(data)
-    return render_template('index.html', data=None)
+    return render_template('index.html', data=None, user=current_user)
 
 
 @main.route('/profile')
 @login_required
 def profile():
     user_history = History.query.filter_by(user_id=current_user.id).order_by(History.date_time.desc()).all()
-    return render_template('profile.html', user_name=current_user.name, history=user_history)
+    return render_template('profile.html', user=current_user, history=user_history)
 
 
 @main.route('/delete_history/<int:history_id>')
@@ -455,4 +454,4 @@ def play_song():
 @main.route('/')
 @login_required
 def redirect_to_profile():
-    return redirect(url_for('main.profile'))
+    return redirect(url_for('main.home'))

@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html>
 
@@ -7,100 +9,65 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>DIARY</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css" />
-    <!-- <link rel="stylesheet" href="styles.css" /> -->
+    <!-- Replace with the new theme CSS file if needed, or add additional CSS files here -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='/css/new_style.css') }}" />
+    <script src="https://kit.fontawesome.com/ce4db69bfc.js" crossorigin="anonymous"></script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+        darkMode: "class",
+        }
+    </script>
     <style>
-        .navbar-item {
-            color: #ffffff;
-        }
-        .navbar-item:hover {
-            color: #F1C40F;
-        }
-        .hero {
-            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-            background-size: 400% 400%;
-            animation: gradient 15s ease infinite;
-            /* height: 100vh; */
-        }
-
-        /* body {
-            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-            background-size: 400% 400%;
-            animation: gradient 15s ease infinite;
-            height: 100vh;
-        } */
-
-        @keyframes gradient {
-            0% {
-                background-position: 0% 50%;
-            }
-            50% {
-                background-position: 100% 50%;
-            }
-            100% {
-                background-position: 0% 50%;
-            }
-        }
-        .container {
-            background-color: rgba(255, 255, 255, 0.6);
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
-        }
-        .hero-head {
-            background-color: rgba(255, 255, 255, 0);
-        }
-        @media screen and (min-width: 1088px){
-        .navbar {
-            align-items: stretch !important;
-            display: flex !important;
-            min-height: 3.25rem;
-        }
-
-        }
+        /* Include additional styles here, potentially replacing or merging with the new theme's styles */
     </style>
+
 </head>
 
-<body>
-    <section class="hero is-fullheight">
-
-        <div class="hero-head">
-            <nav class="navbar">
-                <div class="">
-                    <div id="navbarMenuHeroA" class="navbar-menu">
-                        <div class="navbar-end">
-                            <a href="/home" class="navbar-item">
-                                Home
-                            </a>
-                            <a href="/profile" class="navbar-item">
-                                Profile
-                            </a>
-                            <a href="/login" class="navbar-item">
-                                Login
-                            </a>
-                            <a href="/signup" class="navbar-item">
-                                Sign Up
-                            </a>
-                            <a href="/logout" class="navbar-item">
-                                Logout
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </nav>
+<body class=" bg-black dark:bg-white transition-bg ">
+<div class="jumbo absolute opacity-50">
+    
+</div>
+<div class="app">
+    {% if user.is_authenticated %}
+    <div class="sidebar">
+        <!-- User Information -->
+        
+        <div class="user">
+            <img src="https://lh3.googleusercontent.com/a/ACg8ocI0mgusM3YWeeqAF9kz4WgugLupUXsmozMRrcIJB4y1ZnM=s83-c-mo" alt="user photo" class="user-photo">
+            <div class="user-name">{{ user.name }}</div>
+            <div class="user-mail">{{ user.email }}</div>
         </div>
+        
 
-        <div class="hero-body">
-            <div class="container has-text-centered">
-               {% block content %}
-               {% endblock %}
-            </div>
+        <!-- Sidebar Menu (dynamic based on user authentication) -->
+        
+        <div class="sidebar-menu">
+            {% if user.is_authenticated %}
+                <a href="/home" class="sidebar-menu__link {% block home_active %}{% endblock %}">Home</a>
+                <a href="/profile" class="sidebar-menu__link {% block profile_active %}{% endblock %}">Profile</a>
+                <a href="/logout" class="sidebar-menu__link">Logout</a>
+            {% else %}
+                <a href="/login" class="sidebar-menu__link">Login</a>
+                <a href="/signup" class="sidebar-menu__link">Sign Up</a>
+            {% endif %}
         </div>
-    </section>
+        
+        <!-- Additional Components -->
+        <!-- <label class="toggle">
+            <input type="checkbox">
+            <span class="slider"></span>
+        </label> -->
+    </div>
+    {% endif %}
+    <div class="main">
+        {% block content %}
+        {% endblock %}
+    </div>
+</div>
+
+
 </body>
 
 </html>
-
-
-
-
-

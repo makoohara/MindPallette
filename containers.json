@@ -1,6 +1,6 @@
 {
     "diary": {
-        "image": ":diary.diary.4",
+        "image": ":diary.diary.5",
         "ports": {
             "9000": "HTTP"
         }

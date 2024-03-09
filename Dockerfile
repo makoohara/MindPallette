@@ -8,7 +8,8 @@ RUN apt-get install -y python3-jsonnet
 
 # Copy the dependencies file to the working directory
 COPY requirements.txt .
-# Install any dependencies
+# Install dependencies
+RUN pip3 install --upgrade pip setuptools wheel
 RUN pip3 install jsonnet
 RUN pip3 install --no-cache-dir -r requirements.txt
 
@@ -22,13 +23,11 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 # Copy the current directory contents into the container at /usr/src/app
 COPY . .
 
-# Make port 9000 available to the world outside this container
-EXPOSE 7000
+EXPOSE 5000
 
 # Define environment variable
 ENV FLASK_APP=/usr/src/app/project
-ENV FLASK_DEBUG=1
+ENV FLASK_ENV=development
 
-CMD ["flask", "run", "--port=7000"] 
-#"--host=0.0.0.0", 
+CMD ["python3", "-m", "flask", "run", "--host=0.0.0.0"] 
 

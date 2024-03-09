@@ -1,14 +1,15 @@
 {% extends "base.html" %}
+{% block home_active %}active{% endblock %}
 {% block content %}
-  <link rel="stylesheet" href="styles.css" />
+  <!-- <link rel="stylesheet" href="styles.css" /> -->
 
-  <h1 class="title">
+  <h1 class="main-header__title">
     Let's Art with Your Journals
   </h1>
 
   <label for="mood">How are you feeling today?:</label>
   <!-- <input type="text" id="mood" style="width: 600px; height: 150px"> -->
-  <textarea class="textarea" placeholder="Write your entry here." rows="20" id="mood" style="width: 600px; height: 150px"></textarea>
+  <textarea class="textarea" placeholder="Write your entry here." rows="20" id="mood" style="height: 150px"></textarea>
   <br/>
   
   <label for="genre">Enter a music genre:</label>
