@@ -14,6 +14,7 @@ from itertools import islice
 import numpy as np
 from dotenv import load_dotenv
 import os
+import json
 
 nltk.download('vader_lexicon')
 nltk.download('punkt')
@@ -286,7 +287,7 @@ class OpenAIUtils:
             annotations = processed_data['annotations']
             sentiments = processed_data['sentiments']
             prompt = f"Return parameters for a Dalle prompt based on a diary. The parameter structure should look like this: {parameters}. \n\
-                        Your task is to change the item values of the parameter dictionary to match this annotated text and sentiment states from the diary. {annotations}, {sentiments} \n\
+                        Your task is to change the item values of the parameter dictionary to match this annotated text and sentiment states from a diary here. {annotations}, {sentiments} \n\
                         Do not put any artist names."
         
         try:
@@ -344,42 +345,38 @@ class OpenAIUtils:
 
 def app_main(request):
     try:
+
         openai_util = OpenAIUtils(openai_api_key=openai_api_key)
         nlp_util = NLPUtils()
         processor = DiaryProcessor(openai_util, nlp_util)
         entry = request.json.get('mood')
         processed_data = processor.data_process(entry)
+
+        results = []
         for i in range(1, 5):
             pipeline = i
             data = processed_data[i]
             print('pipeline', i, data)
             
             prompt = openai_util.generate_parameters(data, pipeline)
+
             if i == 3 or i == 4:
                 prompt = processor.output_cleaning(prompt)
+
             print('prompt', i, prompt, type(prompt))
             result = openai_util.generate_image_url(prompt)
+
             print('result', i, result)
+            
+            results.append(str(result))
+
         song = openai_util.recommend_song(entry)
-        return {'song': song, 'img_url': result}
+        print("song object", song, type(song))
+        return {'song': song, 'img_urls': results}
 
     except Exception as e:
         # Handling errors by sending an error response
         return jsonify({'error': str(e)}), 500
-
-# def app_2(request):
-#     try:
-#         processor = DiaryProcessor(openai_api_key=OPENAI_API_KEY)
-#         entry = request.json.get('mood')
-#         print('pipeline 3 parameters', processor.pipeline3(entry))
-#         result2 = processor.process2(entry)
-#         print('result2', result2)
-#         return result2
-
-#     except Exception as e:
-#         # Handling errors by sending an error response
-#         return jsonify({'error': str(e)}), 500
-    
 
 
 @main.route('/home', methods=['POST', 'GET'])
@@ -387,20 +384,41 @@ def app_main(request):
 def home():
     if request.method == 'POST':
         data = app_main(request)
-        print('data', data)
-        #print('data2', app_2(request))
-        # Store history
-        new_history = History(
-            date_time=datetime.utcnow(),
-            diary_entry=request.json.get('mood'),
-            generated_image=data['img_url'],
-            song_snippet=data['song'],
-            user_id=current_user.id  # assuming your User model has an id field
-        )
-        db.session.add(new_history)
-        db.session.commit()
+        # print('data', data)
+        # #print('data2', app_2(request))
+        # # Store history
+        # new_history = History(
+        #     date_time=datetime.utcnow(),
+        #     diary_entry=request.json.get('mood'),
+        #     generated_image=data['img_url'],
+        #     song_snippet=data['song'],
+        #     user_id=current_user.id  # assuming your User model has an id field
+        # )
+        # db.session.add(new_history)
+        # db.session.commit()
         return jsonify(data)
-    return render_template('index.html', data=None, user=current_user)
+    else:
+        return render_template('index.html', data=None, user=current_user)
+
+@main.route('/save_image', methods=['POST'])
+@login_required
+def save_image():
+    data = request.json
+    img_url = data.get('img_url')
+    diary_entry = data.get('diary_entry')
+    song = data.get('song')
+
+    new_history = History(
+        date_time=datetime.utcnow(),
+        diary_entry=diary_entry,
+        generated_image=img_url,
+        song_snippet=song,
+        user_id=current_user.id
+    )
+    db.session.add(new_history)
+    db.session.commit()
+
+    return redirect(url_for('main.profile'))
 
 
 @main.route('/profile')
@@ -445,11 +463,18 @@ def search_and_play_song(search_keyword):
 def play_song():
     data = request.json
     song_name = data.get('song')
-    song_url = search_and_play_song(song_name)
-    if song_url:
-        return jsonify({'url': song_url})
-    else:
-        return jsonify({'error': 'Song not found'}), 404
+    try:
+        song_url = search_and_play_song(song_name)
+        if song_url:
+            return jsonify({'url': song_url})
+        else:
+            return jsonify({'error': 'Song not found'}), 404
+    except requests.exceptions.ReadTimeout:
+        # Handle the timeout, e.g., by logging an error message or notifying the user
+        print("The request to Spotify API timed out.")
+        return jsonify({'error': 'Request to Spotify API timed out.'}), 504  # Gateway Timeout
+
+
 
 @main.route('/')
 @login_required
