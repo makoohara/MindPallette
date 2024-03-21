@@ -27,5 +27,4 @@ sortedcollections==1.2.1
 textblob==0.17.1
 python-dotenv==1.0.0
 spotipy==2.23.0
-allennlp==2.10.1
-allennlp-models==2.10.1
+spacy

@@ -2,7 +2,6 @@ from flask import Blueprint, render_template, request, jsonify, redirect, url_fo
 from . import db
 from openai import OpenAI
 from .models import History
-from flask_cors import CORS
 from flask_login import current_user, login_required
 from datetime import datetime
 from collections import Counter
@@ -14,19 +13,18 @@ from itertools import islice
 import numpy as np
 from dotenv import load_dotenv
 import os
-import json
 
 nltk.download('vader_lexicon')
 nltk.download('punkt')
-nltk.download('averaged_perceptron_tagger')
-nltk.download('maxent_ne_chunker')
+# nltk.download('averaged_perceptron_tagger')
+# nltk.download('maxent_ne_chunker')
 nltk.download('words')
-nltk.download('stopwords')
+# nltk.download('stopwords')
 from nltk.sentiment import SentimentIntensityAnalyzer
 from nltk.tokenize import sent_tokenize
-from nltk.tag import pos_tag
-from nltk.chunk import ne_chunk
-from nltk.corpus import stopwords
+# from nltk.tag import pos_tag
+# from nltk.chunk import ne_chunk
+# from nltk.corpus import stopwords
 from nltk.sentiment import SentimentIntensityAnalyzer
 
 import spotipy
@@ -147,7 +145,6 @@ class NLPUtils:
                 continue
             icons[word] = freq
         sorted_icons_desc = {word: freq for word, freq in sorted(icons.items(), key=lambda item: item[1], reverse=True)}
-        print('sorted_icons_desc:', sorted_icons_desc)
         # make the abstraction random 
         main_keyword_index = random.randint(1, 3)
         sub_keyword_index = main_keyword_index + random.randint(1, 3)
@@ -418,7 +415,7 @@ def save_image():
     db.session.add(new_history)
     db.session.commit()
 
-    return redirect(url_for('main.profile'))
+    return render_template('profile.html', data=None, user=current_user)
 
 
 @main.route('/profile')
@@ -475,8 +472,12 @@ def play_song():
         return jsonify({'error': 'Request to Spotify API timed out.'}), 504  # Gateway Timeout
 
 
+@main.route('/login')
+def login():
+    return redirect(url_for('main.home'))
+
 
 @main.route('/')
 @login_required
 def redirect_to_profile():
-    return redirect(url_for('main.home'))
+    return redirect(url_for('auth.login'))
