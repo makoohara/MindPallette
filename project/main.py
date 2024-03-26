@@ -13,6 +13,12 @@ from itertools import islice
 import numpy as np
 from dotenv import load_dotenv
 import os
+import spotipy
+from spotipy.oauth2 import SpotifyOAuth
+from allennlp.predictors.predictor import Predictor
+import allennlp_models.tagging
+from nltk.sentiment import SentimentIntensityAnalyzer
+from nltk.tokenize import sent_tokenize
 
 nltk.download('vader_lexicon')
 nltk.download('punkt')
@@ -20,17 +26,10 @@ nltk.download('punkt')
 # nltk.download('maxent_ne_chunker')
 nltk.download('words')
 # nltk.download('stopwords')
-from nltk.sentiment import SentimentIntensityAnalyzer
-from nltk.tokenize import sent_tokenize
+
 # from nltk.tag import pos_tag
 # from nltk.chunk import ne_chunk
 # from nltk.corpus import stopwords
-from nltk.sentiment import SentimentIntensityAnalyzer
-
-import spotipy
-from spotipy.oauth2 import SpotifyOAuth
-from allennlp.predictors.predictor import Predictor
-import allennlp_models.tagging
 
 nltk.download('punkt')
 load_dotenv()
@@ -39,7 +38,7 @@ main = Blueprint('main', __name__)
 # Define OpenAI API key
 openai_api_key = os.getenv("OPENAI_API_KEY")
 # User credentials and Spotify setup
-spotify_client_id = os.getenv("SPOTIFY_CLIENT_ID") 
+spotify_client_id = os.getenv("SPOTIFY_CLIENT_ID")
 spotify_client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
 spotify_redirect_uri = "http://google.com/callback/"
 spotify_scope = "user-read-playback-state,user-modify-playback-state"
@@ -70,8 +69,8 @@ class DiaryProcessor:
 
     def data_process(self, entry):
         tokenized_sentences = self.nlp_util.tokenize(entry)
-        polarity = self.nlp_util.sentiment_analysis(tokenized_sentences)      
-        
+        polarity = self.nlp_util.sentiment_analysis(tokenized_sentences)
+
         main_icons, sub_icons = self.nlp_util.icon_extraction(entry)
         sentiment_stats = self.nlp_util.sentiment_stats(polarity)
         overall_sentiment = sentiment_stats['overall_sentiment']
@@ -83,13 +82,13 @@ class DiaryProcessor:
         annotations = self.nlp_util.annotate_srl(srl_result)
         print('annotations:', annotations)
         icons = {'main_icons': main_icons, "sub_icons": sub_icons}
-        data = {1: {**icons, **{'image_attributes': self.select_image_attributes(scaled_score)}},
-                2: {'keywords': icons, 
-                    'overall sentiment': overall_sentiment}, 
-                    'normalized overall std': sentiment_stats['normalized_overall_std'],
-                3: {'text': entry},
-                4: {'annotations': annotations,
-                    'sentiments': sentiment_stats}}
+        data = {
+            1: {**icons, **{'image_attributes': self.select_image_attributes(scaled_score)}},
+            2: {'keywords': icons, 'overall sentiment': overall_sentiment},
+            'normalized overall std': sentiment_stats['normalized_overall_std'],
+            3: {'text': entry},
+            4: {'annotations': annotations, 'sentiments': sentiment_stats}
+        }
         return data
 
 
@@ -145,7 +144,7 @@ class NLPUtils:
                 continue
             icons[word] = freq
         sorted_icons_desc = {word: freq for word, freq in sorted(icons.items(), key=lambda item: item[1], reverse=True)}
-        # make the abstraction random 
+        # make the abstraction random
         main_keyword_index = random.randint(1, 3)
         sub_keyword_index = main_keyword_index + random.randint(1, 3)
         main_icons = dict(islice(sorted_icons_desc.items(), 0, main_keyword_index))
@@ -170,7 +169,6 @@ class NLPUtils:
             result.append(srl_result)
         return result
 
-
     def annotate_srl(self, srl_result):
         structured_data = {}
         for sentence in srl_result:
@@ -184,9 +182,8 @@ class NLPUtils:
                     if label in structured_data:
                         structured_data[label] += [text]
                     else: 
-                        structured_data[label] = [text]    
+                        structured_data[label] = [text]
         return structured_data
-
 
     def sentiment_analysis(self, tokenized_sentences):
         sia = SentimentIntensityAnalyzer()
@@ -201,7 +198,6 @@ class NLPUtils:
             neg.append(sentiment['neg'])
         sentiments = {'compound': compound, 'positive': pos, 'negative': neg}
         return sentiments
-
 
     def sentiment_stats(self, sentiment_analysis):
         overall_sentiment = np.mean(sentiment_analysis['compound'])
@@ -237,16 +233,17 @@ class NLPUtils:
 class OpenAIUtils:
     def __init__(self, openai_api_key):
         self.client = OpenAI(api_key=openai_api_key)
-    
     def query(self, system_msg, prompt):
         try:
             response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
-                messages=[{"role": "system", "content": system_msg},
-                            {"role": "user", "content": prompt}],
+                messages=[
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": prompt}
+                ],
                 temperature=0,
                 top_p=1,
-                frequency_penalty=0,    
+                frequency_penalty=0,
                 presence_penalty=0
             )
             parameters = response.choices[0].message.content
@@ -258,15 +255,17 @@ class OpenAIUtils:
 
     def generate_parameters(self, processed_data, pipeline):
         system_msg = 'You are a prompt engineer for Dalle. You improvise or adjust prompts based on annotated/original text inputs and returns parameter as an python object. The goal of the prompt is to visually and figuratively express the emotion in the diary. The more detailed and nuanced the better.'
-        parameters = {'main subjects': {'London': 1}, 
-                'secondary subjects': {'orange': 1}, 
-                'aspect ratio': '1:1', 
-                'medium': 'abstract painting', 
-                'camera': {'portrait view': 1}, 
-                'descriptor': {'realism': 1}, 
-                'artist': {'Andy Warhol': 1}, 
-                'lighting': {'black light': 1}, 
-                'color': {'dark': 1}}
+        parameters = {
+            'main subjects': {'London': 1},
+            'secondary subjects': {'orange': 1},
+            'aspect ratio': '1:1',
+            'medium': 'abstract painting',
+            'camera': {'portrait view': 1},
+            'descriptor': {'realism': 1},
+            'artist': {'Andy Warhol': 1},
+            'lighting': {'black light': 1},
+            'color': {'dark': 1}
+        }
         if pipeline == 1:
             main_icons = processed_data['main_icons']
             sub_icons = processed_data['sub_icons']
@@ -286,7 +285,7 @@ class OpenAIUtils:
             prompt = f"Return parameters for a Dalle prompt based on a diary. The parameter structure should look like this: {parameters}. \n\
                         Your task is to change the item values of the parameter dictionary to match this annotated text and sentiment states from a diary here. {annotations}, {sentiments} \n\
                         Do not put any artist names."
-        
+     
         try:
             print('Dalle prompt', pipeline, ":", prompt)
             return self.query(system_msg, prompt)
@@ -444,6 +443,7 @@ token = token_dict['access_token']
 # Create Spotify Object
 spotifyObject = spotipy.Spotify(auth=token)
 
+
 def search_and_play_song(search_keyword):
     # Search for the Song.
     search_results = spotifyObject.search(search_keyword, 1, 0, "track")
@@ -454,6 +454,7 @@ def search_and_play_song(search_keyword):
         return tracks_items[0]['external_urls']['spotify']
     else:
         return None
+
 
 @main.route('/playsong', methods=['POST'])
 @login_required
@@ -466,7 +467,7 @@ def play_song():
             return jsonify({'url': song_url})
         else:
             return jsonify({'error': 'Song not found'}), 404
-    except requests.exceptions.ReadTimeout:
+    except request.exceptions.ReadTimeout:
         # Handle the timeout, e.g., by logging an error message or notifying the user
         print("The request to Spotify API timed out.")
         return jsonify({'error': 'Request to Spotify API timed out.'}), 504  # Gateway Timeout
