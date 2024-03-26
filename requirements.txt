@@ -24,6 +24,7 @@ tqdm==4.66.1
 typing_extensions==4.9.0
 Werkzeug==2.3.7
 sortedcollections==1.2.1
+torch==1.12.1
 textblob==0.17.1
 python-dotenv==1.0.0
 spotipy==2.23.0
