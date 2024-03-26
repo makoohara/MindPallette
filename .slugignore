@@ -1,3 +1,6 @@
 .venv
 .gitignore
 .cache
+spotipy_test.py
+project/openai_test.py
+project/allenNLP.py
