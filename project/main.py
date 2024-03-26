@@ -4,7 +4,6 @@ from openai import OpenAI
 from .models import History
 from flask_login import current_user, login_required
 from datetime import datetime
-from collections import Counter
 import random
 import math
 import nltk
@@ -14,9 +13,9 @@ import numpy as np
 from dotenv import load_dotenv
 import os
 import spotipy
-from spotipy.oauth2 import SpotifyOAuth
+# from spotipy.oauth2 import SpotifyOAuth
 from allennlp.predictors.predictor import Predictor
-import allennlp_models.tagging
+# import allennlp_models.tagging
 from nltk.sentiment import SentimentIntensityAnalyzer
 from nltk.tokenize import sent_tokenize
 
@@ -30,8 +29,6 @@ nltk.download('words')
 # from nltk.tag import pos_tag
 # from nltk.chunk import ne_chunk
 # from nltk.corpus import stopwords
-
-nltk.download('punkt')
 load_dotenv()
 
 main = Blueprint('main', __name__)
