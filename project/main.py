@@ -6,7 +6,7 @@ from flask_login import current_user, login_required
 from datetime import datetime
 import random
 import math
-import nltk
+# import nltk
 import re
 from itertools import islice
 import numpy as np
@@ -19,11 +19,11 @@ from allennlp.predictors.predictor import Predictor
 from nltk.sentiment import SentimentIntensityAnalyzer
 from nltk.tokenize import sent_tokenize
 
-nltk.download('vader_lexicon')
-nltk.download('punkt')
+# nltk.download('vader_lexicon')
+# nltk.download('punkt')
 # nltk.download('averaged_perceptron_tagger')
 # nltk.download('maxent_ne_chunker')
-nltk.download('words')
+# nltk.download('words')
 # nltk.download('stopwords')
 
 # from nltk.tag import pos_tag
@@ -42,7 +42,6 @@ spotify_scope = "user-read-playback-state,user-modify-playback-state"
 
 
 class DiaryProcessor:
-
     def __init__(self, openai_util, nlp_util):
         self.openai_util = openai_util
         self.nlp_util = nlp_util
@@ -67,24 +66,21 @@ class DiaryProcessor:
     def data_process(self, entry):
         tokenized_sentences = self.nlp_util.tokenize(entry)
         polarity = self.nlp_util.sentiment_analysis(tokenized_sentences)
-
         main_icons, sub_icons = self.nlp_util.icon_extraction(entry)
         sentiment_stats = self.nlp_util.sentiment_stats(polarity)
         overall_sentiment = sentiment_stats['overall_sentiment']
         print('overall_sentiment:', overall_sentiment)
         scaled_score = -1 * math.ceil(abs(overall_sentiment) * 5) if overall_sentiment < 0 else math.ceil(overall_sentiment * 5)
         print('scaled_score:', scaled_score)
-        srl_result = self.nlp_util.srl(tokenized_sentences)
-        print('srl_result:', srl_result)
-        annotations = self.nlp_util.annotate_srl(srl_result)
-        print('annotations:', annotations)
+        # srl_result = self.nlp_util.srl(tokenized_sentences)
+        # print('srl_result:', srl_result)
         icons = {'main_icons': main_icons, "sub_icons": sub_icons}
+        print('icons:', icons)
         data = {
             1: {**icons, **{'image_attributes': self.select_image_attributes(scaled_score)}},
             2: {'keywords': icons, 'overall sentiment': overall_sentiment},
             'normalized overall std': sentiment_stats['normalized_overall_std'],
-            3: {'text': entry},
-            4: {'annotations': annotations, 'sentiments': sentiment_stats}
+            3: {'text': entry}
         }
         return data
 
@@ -123,8 +119,7 @@ class NLPUtils:
         "ain", "aren", "couldn", "didn", "doesn", "hadn", "hasn", "haven", "isn", "ma", "mightn", "mustn",
         "needn", "shan", "shouldn", "wasn", "weren", "won", "wouldn",
         "today", "yesterday", "tomorrow", "day", "night", "morning", "evening"]
-        self.model_path = {'srl': "https://storage.googleapis.com/allennlp-public-models/structured-prediction-srl-bert.2020.12.15.tar.gz",
-                            'coref': "https://storage.googleapis.com/allennlp-public-models/coref-spanbert-large-2021.03.10.tar.gz"}
+        self.model_path = {'coref': "https://storage.googleapis.com/allennlp-public-models/coref-spanbert-large-2021.03.10.tar.gz"}
 
     def icon_extraction(self, entry):
         COREF_MODEL_PATH = self.model_path['coref']
@@ -141,9 +136,10 @@ class NLPUtils:
                 continue
             icons[word] = freq
         sorted_icons_desc = {word: freq for word, freq in sorted(icons.items(), key=lambda item: item[1], reverse=True)}
+        print('sorted_icons_desc:', sorted_icons_desc)
         # make the abstraction random
-        main_keyword_index = random.randint(1, 3)
-        sub_keyword_index = main_keyword_index + random.randint(1, 3)
+        main_keyword_index = random.randint(1, 4)
+        sub_keyword_index = main_keyword_index + random.randint(1, 5)
         main_icons = dict(islice(sorted_icons_desc.items(), 0, main_keyword_index))
         sub_icons = dict(islice(sorted_icons_desc.items(), main_keyword_index, sub_keyword_index))
         print('main_icons:', main_icons, 'sub_icons:', sub_icons)
@@ -154,33 +150,34 @@ class NLPUtils:
         return sentences
 
 
-    def srl(self, tokenized_sentences):
-        """
-        Extract verbs from a sentence using SRL, then query ChatGPT for associated emotions.
-        """
-        srl_model_path = self.model_path['srl']
-        predictor = Predictor.from_path(srl_model_path)
-        result = []
-        for sentence in tokenized_sentences:
-            srl_result = predictor.predict(sentence=sentence)
-            result.append(srl_result)
-        return result
+    # def srl(self, tokenized_sentences):
+    #     """
+    #     Extract verbs from a sentence using SRL, then query ChatGPT for associated emotions.
+    #     """
+    #     srl_model_path = self.model_path['srl']
+    #     predictor = Predictor.from_path(srl_model_path)
+    #     result = []
+    #     for sentence in tokenized_sentences:
+    #         srl_result = predictor.predict(sentence=sentence)
+    #         result.append(srl_result)
+    #     return result
 
-    def annotate_srl(self, srl_result):
-        structured_data = {}
-        for sentence in srl_result:
-            verbs = sentence['verbs']
-            for verb_dict in verbs:
-                roles = verb_dict['description']
-                components = re.findall(r'\[(.*?)\]', roles)
-                for component in components:
-                    # Split each component into its label and text
-                    label, text = component.split(': ', 1)
-                    if label in structured_data:
-                        structured_data[label] += [text]
-                    else: 
-                        structured_data[label] = [text]
-        return structured_data
+    # def annotate_srl(self, srl_result):
+    #     structured_data = {}
+    #     for sentence in srl_result:
+    #         verbs = sentence['verbs']
+    #         for verb_dict in verbs:
+    #             roles = verb_dict['description']
+    #             components = re.findall(r'\[(.*?)\]', roles)
+    #             for component in components:
+    #                 # Split each component into its label and text
+    #                 label, text = component.split(': ', 1)
+    #                 if label in structured_data:
+    #                     structured_data[label] += [text]
+    #                 else: 
+    #                     structured_data[label] = [text]
+    #     return structured_data
+
 
     def sentiment_analysis(self, tokenized_sentences):
         sia = SentimentIntensityAnalyzer()
@@ -251,7 +248,7 @@ class OpenAIUtils:
             return jsonify({'OpenAI GPT-3.5 Error': str(e)}), 500
 
     def generate_parameters(self, processed_data, pipeline):
-        system_msg = 'You are a prompt engineer for Dalle. You improvise or adjust prompts based on annotated/original text inputs and returns parameter as an python object. The goal of the prompt is to visually and figuratively express the emotion in the diary. The more detailed and nuanced the better.'
+        system_msg = 'You are a prompt engineer for Dalle. You improvise and adjust prompts parameter based on information provided of diary text. Only return parameters that can directly paste into Dall-E to generate an image. The goal of the prompt is to figuratively express the emotion in the diary. The more detailed and nuanced the prompt, the better.'
         parameters = {
             'main subjects': {'London': 1},
             'secondary subjects': {'orange': 1},
@@ -271,25 +268,27 @@ class OpenAIUtils:
             return prompt
         elif pipeline == 2:
             prompt_keywords = processed_data['keywords']
-            prompt = f"Here are extracted themes, sentiment scores, and keywords from the diary: {prompt_keywords}. Return only the image prompt for Dall-E with this structure: [image type (e.g. film, abstract painting, portrait, etc.)] of [description of icon], with [color scheme] and [style/artist]. More specific on art style/detail the better."
+            prompt = f"Here are extracted themes, sentiment scores, and keywords from the diary: {prompt_keywords}. Return only the image prompt for Dall-E with this structure: [image type (e.g. film, abstract painting, portrait, etc.)] of [description of icon(s)], with [detail color scheme] and [style/artist]. More specific the description, the better."
+            try:
+                print('Dalle prompt', pipeline, ":", prompt)
+                return self.query(system_msg, prompt)
+            except Exception as e:
+                # Handling errors by sending an error response
+                print('OpenAI GPT-3.5 Error', str(e))
+                return jsonify({'OpenAI GPT-3.5 Error': str(e)}), 500
         elif pipeline == 3:
             text = processed_data['text']
-            prompt = f"Return parameters for a Dalle prompt based on a diary. The parameter structure should look like this: {parameters}. \n\
-                        Your task is to change the item values of the parameter to match this diary text. {text} "
-        elif pipeline == 4:
-            annotations = processed_data['annotations']
-            sentiments = processed_data['sentiments']
-            prompt = f"Return parameters for a Dalle prompt based on a diary. The parameter structure should look like this: {parameters}. \n\
-                        Your task is to change the item values of the parameter dictionary to match this annotated text and sentiment states from a diary here. {annotations}, {sentiments} \n\
-                        Do not put any artist names."
+            prompt = f"Return parameters description and its weight to describe the emotional experience as an image for Dalle. The parameter structure should look like this: {parameters}. \n\
+                        Your task is to change the item values of each parameter to match this diary text. {text} "
+            try:
+                print('Dalle prompt', pipeline, ":", prompt)
+                return self.query(system_msg, prompt)
+            except Exception as e:
+                # Handling errors by sending an error response
+                print('OpenAI GPT-3.5 Error', str(e))
+                return jsonify({'OpenAI GPT-3.5 Error': str(e)}), 500
      
-        try:
-            print('Dalle prompt', pipeline, ":", prompt)
-            return self.query(system_msg, prompt)
-        except Exception as e:
-            # Handling errors by sending an error response
-            print('OpenAI GPT-3.5 Error', str(e))
-            return jsonify({'OpenAI GPT-3.5 Error': str(e)}), 500
+        
         
     def generate_image_url(self, prompt):
         dalle_prompt = ' '.join(prompt) + ' ,artistic'
@@ -338,7 +337,6 @@ class OpenAIUtils:
 
 def app_main(request):
     try:
-
         openai_util = OpenAIUtils(openai_api_key=openai_api_key)
         nlp_util = NLPUtils()
         processor = DiaryProcessor(openai_util, nlp_util)
@@ -346,8 +344,9 @@ def app_main(request):
         processed_data = processor.data_process(entry)
 
         results = []
-        for i in range(1, 5):
+        for i in range(1, 4):
             pipeline = i
+            print('generating Dall-E prompt with pipeline', pipeline)
             data = processed_data[i]
             print('pipeline', i, data)
             
@@ -376,6 +375,13 @@ def app_main(request):
 @login_required
 def home():
     if request.method == 'POST':
+        # Check the number of saved images
+        saved_images_count = History.query.filter_by(user_id=current_user.id).count()
+
+        # Prompt user to delete history if there are 6 or more saved images
+        if saved_images_count >= 6:
+            data = {'error': 'You have reached the maximum limit of saved images. Please delete one or more history entries.'}
+            return jsonify(data)
         data = app_main(request)
         # print('data', data)
         # #print('data2', app_2(request))
@@ -389,6 +395,7 @@ def home():
         # )
         # db.session.add(new_history)
         # db.session.commit()
+        print('data', data, 'type', type(data))
         return jsonify(data)
     else:
         return render_template('index.html', data=None, user=current_user)

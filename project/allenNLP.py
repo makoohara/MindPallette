@@ -1,6 +1,6 @@
 from allennlp.predictors.predictor import Predictor
-import allennlp_models.tagging
-import openai
+# import allennlp_models.tagging
+# import openai
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
@@ -103,9 +103,9 @@ def generate_image_url(prompt, client):
 # Example usage
 entry = 'Today was one of those days where Londons grey skies felt more comforting than gloomy. Wrapped in my favorite scarf, the chill in the air somehow matched my mood - reflective, a bit somber, yet hopeful. University life in this sprawling city continues to be an emotional rollercoaster. The blend of excitement and overwhelming moments hasnt faded since the day I arrived.  I spent the morning in the British Library, nestled among books and the silent determination of fellow students. Theres something about that place that makes my worries seem quieter, the weight of deadlines a bit lighter. As I walked back to my flat, the aroma of fresh rain on pavement filled the air, a scent thats become a strange companion in my solitary moments.  Lectures today felt particularly engaging, diving into topics that challenge my perspectives and push my boundaries. Yet, amidst the intellectual stimulation, theres this undercurrent of solitude that I cant seem to shake off. Its odd, being surrounded by a sea of faces, yet feeling a disconnect. I miss the effortless conversations and laughter with friends back home, the familiarity of shared history.  Evening brought a spontaneous adventure - a solo exploration of a little bookshop I stumbled upon. Hidden treasures nestled in its shelves offered a brief escape, a reminder of the simple joys I often overlook. The city, with its endless buzz and hidden quiet corners, never ceases to surprise me.  As night envelops London, the skyline a silhouette of dreams against the twilight, I find solace in writing down these thoughts. Theres a peculiar beauty in navigating this chapter of my life, a tapestry of growth, learning, and self-discovery. Despite the occasional bouts of loneliness, theres a part of me thats grateful for this journey, for the person Im becoming amidst the chaos of city life.  Tomorrow promises another page of this London adventure, another opportunity to embrace the unknown. Until then, Ill hold onto the small victories, the fleeting moments of connection, and the hope that, in time, Ill find my tribe in this vast metropolis.  Goodnight, London.'
 
-parameters = pipeline3(entry, client)
-print('process3: ', parameters)
-print('image_ulr_3: ', generate_image_url(parameters, client))
+# parameters = pipeline3(entry, client)
+# print('process3: ', parameters)
+# print('image_ulr_3: ', generate_image_url(parameters, client))
 
 def icon_extraction(entry):
     COREF_MODEL_PATH = "https://storage.googleapis.com/allennlp-public-models/coref-spanbert-large-2021.03.10.tar.gz"
@@ -120,8 +120,10 @@ def icon_extraction(entry):
         cluster_index = cluster[0]
         word = " ".join(document[cluster_index[0]:cluster_index[1]+1])
         icons[word] = freq
+    print('icons:', icons)
     sorted_icons_desc = {word: freq for word, freq in sorted(icons.items(), key=lambda item: item[1], reverse=True)}
     print('sorted_icons_desc:', sorted_icons_desc)
+    return sorted_icons_desc
 
 
 def tokenize(entry):
@@ -246,13 +248,15 @@ srl_result = srl(tokenized_sentences)
 annotation = annotate_srl(srl_result)
 sentiments = sentiment_analysis(tokenized_sentences)
 stats = sentiment_stats(sentiments)
+icons = icon_extraction(entry)
+print('icons:', icons)
 print('stats:', stats)
 print('annotation:', annotation)
 print('sentiment analysis:', sentiments)
 
-parameter_4 = pipeline4(entry, annotation, sentiments, client)
-print('parameter_4:', parameter_4)
-print('image_ulr_4: ', generate_image_url(parameter_4, client))
+# parameter_4 = pipeline4(entry, annotation, sentiments, client)
+# print('parameter_4:', parameter_4)
+# print('image_ulr_4: ', generate_image_url(parameter_4, client))
 
 # compound = sentiments['compound']
 # pos = sentiments['positive']

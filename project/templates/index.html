@@ -76,6 +76,11 @@
     })
     .then(res => res.json())
     .then(data => {
+        if (data.error) {
+            document.getElementById('create').classList.remove('is-loading');
+            document.getElementById("output").innerHTML = `<p style="color: red;">${data.error}</p>`;
+            return;
+        }
         const song = data.song;
         const imgUrls = data.img_urls; // Assuming the backend returns an array of URLs
 
@@ -122,7 +127,7 @@
         });
     })
     .catch(error => {
-        console.error("Error:", error);
+        console.error("Error:", error, res);
         document.getElementById('create').classList.remove('is-loading');
         document.getElementById("output").innerHTML = `<p style="color: red;">Error fetching data. Please try again later.</p>`;
     });
@@ -148,6 +153,7 @@
         })
         .then(data => {
             console.log('Image saved successfully:', data);
+            window.location.href = "/profile";
             // Optionally redirect or inform the user of success
         })
         .catch(error => {
