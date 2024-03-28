@@ -4,20 +4,22 @@ from openai import OpenAI
 from .models import History
 from flask_login import current_user, login_required
 from datetime import datetime
+from nltk.sentiment import SentimentIntensityAnalyzer
+from nltk.tokenize import sent_tokenize
+from fastcoref import FCoref
+from itertools import islice
+from dotenv import load_dotenv
 import random
 import math
 # import nltk
 import re
-from itertools import islice
 import numpy as np
-from dotenv import load_dotenv
 import os
 import spotipy
 # from spotipy.oauth2 import SpotifyOAuth
-from allennlp.predictors.predictor import Predictor
+# from allennlp.predictors.predictor import Predictor
 # import allennlp_models.tagging
-from nltk.sentiment import SentimentIntensityAnalyzer
-from nltk.tokenize import sent_tokenize
+
 
 # nltk.download('vader_lexicon')
 # nltk.download('punkt')
@@ -121,28 +123,37 @@ class NLPUtils:
         "today", "yesterday", "tomorrow", "day", "night", "morning", "evening"]
         self.model_path = {'coref': "https://storage.googleapis.com/allennlp-public-models/coref-spanbert-large-2021.03.10.tar.gz"}
 
-    def icon_extraction(self, entry):
-        COREF_MODEL_PATH = self.model_path['coref']
-        predictor = Predictor.from_path(COREF_MODEL_PATH)
-        predictions = predictor.predict(document=entry)
-        document = predictions['document']
-        icons = dict()
-        clusters = predictions['clusters']
+
+    def icon_extraction(self, entry, model_path=None, device='cpu'):
+        # Initialize the FCoref model
+        model = FCoref(device=device)
+    
+        # Predict coreferences
+        preds = model.predict(texts=[entry])
+        
+        # Extract clusters as strings
+        clusters = preds[0].get_clusters()
+        print('clusters:', clusters)
+        icons = {}
         for cluster in clusters:
             freq = len(cluster)
-            cluster_index = cluster[0]
-            word = " ".join(document[cluster_index[0]:cluster_index[1]+1])
+            word = cluster[0]
             if word in self.diary_stop_words:
                 continue
             icons[word] = freq
-        sorted_icons_desc = {word: freq for word, freq in sorted(icons.items(), key=lambda item: item[1], reverse=True)}
-        print('sorted_icons_desc:', sorted_icons_desc)
-        # make the abstraction random
+        
+        # Sort mentions by frequency in descending order
+        sorted_icons_desc = {k: v for k, v in sorted(icons.items(), key=lambda item: item[1], reverse=True)}
+
+        # Selecting main and sub icons based on frequencies
         main_keyword_index = random.randint(1, 4)
         sub_keyword_index = main_keyword_index + random.randint(1, 5)
         main_icons = dict(islice(sorted_icons_desc.items(), 0, main_keyword_index))
         sub_icons = dict(islice(sorted_icons_desc.items(), main_keyword_index, sub_keyword_index))
-        print('main_icons:', main_icons, 'sub_icons:', sub_icons)
+        print('sorted icons:', sorted_icons_desc)
+        print('Main Icons:', main_icons)
+        print('Sub Icons:', sub_icons)
+        
         return main_icons, sub_icons
 
     def tokenize(self, entry):
@@ -266,16 +277,6 @@ class OpenAIUtils:
             attributes = processed_data['image_attributes']
             prompt = f"main subjects: {main_icons}, secondary subjects: {sub_icons}, attributes: {attributes}"
             return prompt
-        elif pipeline == 2:
-            prompt_keywords = processed_data['keywords']
-            prompt = f"Here are extracted themes, sentiment scores, and keywords from the diary: {prompt_keywords}. Return only the image prompt for Dall-E with this structure: [image type (e.g. film, abstract painting, portrait, etc.)] of [description of icon(s)], with [detail color scheme] and [style/artist]. More specific the description, the better."
-            try:
-                print('Dalle prompt', pipeline, ":", prompt)
-                return self.query(system_msg, prompt)
-            except Exception as e:
-                # Handling errors by sending an error response
-                print('OpenAI GPT-3.5 Error', str(e))
-                return jsonify({'OpenAI GPT-3.5 Error': str(e)}), 500
         elif pipeline == 3:
             text = processed_data['text']
             prompt = f"Return parameters description and its weight to describe the emotional experience as an image for Dalle. The parameter structure should look like this: {parameters}. \n\
@@ -287,11 +288,10 @@ class OpenAIUtils:
                 # Handling errors by sending an error response
                 print('OpenAI GPT-3.5 Error', str(e))
                 return jsonify({'OpenAI GPT-3.5 Error': str(e)}), 500
-     
-        
+
         
     def generate_image_url(self, prompt):
-        dalle_prompt = ' '.join(prompt) + ' ,artistic'
+        dalle_prompt = ' '.join(prompt)
         try:
             response = self.client.images.generate(
                         model="dall-e-3",
@@ -344,7 +344,7 @@ def app_main(request):
         processed_data = processor.data_process(entry)
 
         results = []
-        for i in range(1, 4):
+        for i in [1, 3]:
             pipeline = i
             print('generating Dall-E prompt with pipeline', pipeline)
             data = processed_data[i]
@@ -364,11 +364,12 @@ def app_main(request):
 
         song = openai_util.recommend_song(entry)
         print("song object", song, type(song))
+        print("img_urls", results)
         return {'song': song, 'img_urls': results}
 
     except Exception as e:
         # Handling errors by sending an error response
-        return jsonify({'error': str(e)}), 500
+        return ({'error': str(e)}, 500)
 
 
 @main.route('/home', methods=['POST', 'GET'])
@@ -382,19 +383,9 @@ def home():
         if saved_images_count >= 6:
             data = {'error': 'You have reached the maximum limit of saved images. Please delete one or more history entries.'}
             return jsonify(data)
-        data = app_main(request)
-        # print('data', data)
-        # #print('data2', app_2(request))
-        # # Store history
-        # new_history = History(
-        #     date_time=datetime.utcnow(),
-        #     diary_entry=request.json.get('mood'),
-        #     generated_image=data['img_url'],
-        #     song_snippet=data['song'],
-        #     user_id=current_user.id  # assuming your User model has an id field
-        # )
-        # db.session.add(new_history)
-        # db.session.commit()
+        data, status_code = app_main(request)
+        if status_code != 200:
+            return jsonify(data), status_code
         print('data', data, 'type', type(data))
         return jsonify(data)
     else:

@@ -1,3 +1,5 @@
+import spacy
+import neuralcoref
 from openai import OpenAI
 from datetime import datetime
 import os
@@ -6,11 +8,11 @@ from flask import jsonify
 from dotenv import load_dotenv
 import re
 
+
+
 warnings.filterwarnings("ignore")
 load_dotenv()
 openai_key = os.getenv("OPENAI_API_KEY")
-print(openai_key)
-
 client = OpenAI(
     api_key=openai_key)
 
@@ -91,9 +93,14 @@ def generate_image_url(prompt):
     img_url = response.data[0].url
     return img_url
 
+def extract_coreferences_spacy(document):
+    nlp = spacy.load('en_core_web_sm')
+    neuralcoref.add_to_pipe(nlp)
+    doc = nlp(document)
 
+    for cluster in doc._.coref_clusters:
+        # Example: print the cluster
+        print(cluster)
 
 entry = 'Today was one of those days where Londons grey skies felt more comforting than gloomy. Wrapped in my favorite scarf, the chill in the air somehow matched my mood - reflective, a bit somber, yet hopeful. University life in this sprawling city continues to be an emotional rollercoaster. The blend of excitement and overwhelming moments hasnt faded since the day I arrived.  I spent the morning in the British Library, nestled among books and the silent determination of fellow students. Theres something about that place that makes my worries seem quieter, the weight of deadlines a bit lighter. As I walked back to my flat, the aroma of fresh rain on pavement filled the air, a scent thats become a strange companion in my solitary moments.  Lectures today felt particularly engaging, diving into topics that challenge my perspectives and push my boundaries. Yet, amidst the intellectual stimulation, theres this undercurrent of solitude that I cant seem to shake off. Its odd, being surrounded by a sea of faces, yet feeling a disconnect. I miss the effortless conversations and laughter with friends back home, the familiarity of shared history.  Evening brought a spontaneous adventure - a solo exploration of a little bookshop I stumbled upon. Hidden treasures nestled in its shelves offered a brief escape, a reminder of the simple joys I often overlook. The city, with its endless buzz and hidden quiet corners, never ceases to surprise me.  As night envelops London, the skyline a silhouette of dreams against the twilight, I find solace in writing down these thoughts. Theres a peculiar beauty in navigating this chapter of my life, a tapestry of growth, learning, and self-discovery. Despite the occasional bouts of loneliness, theres a part of me thats grateful for this journey, for the person Im becoming amidst the chaos of city life.  Tomorrow promises another page of this London adventure, another opportunity to embrace the unknown. Until then, Ill hold onto the small victories, the fleeting moments of connection, and the hope that, in time, Ill find my tribe in this vast metropolis.  Goodnight, London.'
-parameters = pipeline3(entry)
-print('process3: ', parameters)
-print('image_ulr_3: ', generate_image_url(parameters))
+extract_coreferences_spacy(entry)

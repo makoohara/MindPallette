@@ -82,8 +82,9 @@
             return;
         }
         const song = data.song;
-        const imgUrls = data.img_urls; // Assuming the backend returns an array of URLs
+        const imgUrls = data.img_urls;
 
+        log("img:", imgUrls);
         // Generate HTML for each image without inline onclick
         let imagesHtml = imgUrls.map((url, index) => 
             `
@@ -127,7 +128,7 @@
         });
     })
     .catch(error => {
-        console.error("Error:", error, res);
+        console.error("Error:", error);
         document.getElementById('create').classList.remove('is-loading');
         document.getElementById("output").innerHTML = `<p style="color: red;">Error fetching data. Please try again later.</p>`;
     });
@@ -135,7 +136,6 @@
     function saveImage(imgUrl, mood, song) {
         console.log("Saving image with URL:", imgUrl); // Diagnostic log
 
-        // Assuming you have an endpoint to handle saving the selected image
         fetch('/save_image', {
             method: 'POST',
             body: JSON.stringify({
