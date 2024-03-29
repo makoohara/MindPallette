@@ -1,11 +1,10 @@
 # Start with a Miniconda base image
-FROM continuumio/miniconda3:latest
-
+FROM python:3.9-slim
 # Set the working directory in the container
 WORKDIR /usr/src/app
 
 # Install Python 3.8, AllenNLP, and additional AllenNLP packages using Conda from the conda-forge channel
-RUN conda install -c conda-forge -y python=3.8 allennlp allennlp-models
+RUN apt-get update && apt-get install -y build-essential
 
 # Optionally, install any additional AllenNLP plugins or optional packages as needed
 # RUN conda install -c conda-forge allennlp-semparse allennlp-server allennlp-optuna

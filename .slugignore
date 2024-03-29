@@ -3,4 +3,5 @@
 .cache
 spotipy_test.py
 project/openai_test.py
+project/__pyache__
 project/allenNLP.py

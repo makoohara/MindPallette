@@ -365,7 +365,7 @@ def app_main(request):
         song = openai_util.recommend_song(entry)
         print("song object", song, type(song))
         print("img_urls", results)
-        return {'song': song, 'img_urls': results}
+        return jsonify({'song': song, 'img_urls': results})
 
     except Exception as e:
         # Handling errors by sending an error response
@@ -383,11 +383,11 @@ def home():
         if saved_images_count >= 6:
             data = {'error': 'You have reached the maximum limit of saved images. Please delete one or more history entries.'}
             return jsonify(data)
-        data, status_code = app_main(request)
-        if status_code != 200:
-            return jsonify(data), status_code
+        data = app_main(request)
+        # if status_code != 200:
+        #     return jsonify(data), status_code
         print('data', data, 'type', type(data))
-        return jsonify(data)
+        return data
     else:
         return render_template('index.html', data=None, user=current_user)
 
