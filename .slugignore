@@ -5,3 +5,5 @@ spotipy_test.py
 project/openai_test.py
 project/__pyache__
 project/allenNLP.py
+Dockerfile
+docker-compose.yml
