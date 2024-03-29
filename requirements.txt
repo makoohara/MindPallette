@@ -125,7 +125,7 @@ Werkzeug==2.3.7
 # srsly==1.0.7
 # tensorboardX==2.6.2.2
 # termcolor==1.1.0
-# textblob==0.17.1
+textblob==0.18.0
 # thinc==7.4.6
 # threadpoolctl==3.3.0
 

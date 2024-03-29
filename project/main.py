@@ -4,8 +4,10 @@ from openai import OpenAI
 from .models import History
 from flask_login import current_user, login_required
 from datetime import datetime
-from nltk.sentiment import SentimentIntensityAnalyzer
-from nltk.tokenize import sent_tokenize
+# from nltk.sentiment import SentimentIntensityAnalyzer
+# from nltk.tokenize import sent_tokenize
+from textblob import TextBlob
+
 from fastcoref import FCoref
 from itertools import islice
 from dotenv import load_dotenv
@@ -157,8 +159,11 @@ class NLPUtils:
         return main_icons, sub_icons
 
     def tokenize(self, entry):
-        sentences = sent_tokenize(entry)
-        return sentences
+        # sentences = sent_tokenize(entry)
+        # return sentences
+        # Use TextBlob for sentence tokenization
+        blob = TextBlob(entry)
+        return [sentence.raw for sentence in blob.sentences]
 
 
     # def srl(self, tokenized_sentences):
@@ -191,17 +196,35 @@ class NLPUtils:
 
 
     def sentiment_analysis(self, tokenized_sentences):
-        sia = SentimentIntensityAnalyzer()
-        compound = []
-        pos = []
-        neg = []
+        # sia = SentimentIntensityAnalyzer()
+        # compound = []
+        # pos = []
+        # neg = []
 
+        # for sentence in tokenized_sentences:
+        #     sentiment = sia.polarity_scores(sentence)
+        #     compound.append(sentiment['compound'])
+        #     pos.append(sentiment['pos'])
+        #     neg.append(sentiment['neg'])
+        # sentiments = {'compound': compound, 'positive': pos, 'negative': neg}
+        # return sentiments
+        # Analyze sentiment for each sentence using TextBlob
+        sentiments = {'compound': [], 'positive': [], 'negative': []}
         for sentence in tokenized_sentences:
-            sentiment = sia.polarity_scores(sentence)
-            compound.append(sentiment['compound'])
-            pos.append(sentiment['pos'])
-            neg.append(sentiment['neg'])
-        sentiments = {'compound': compound, 'positive': pos, 'negative': neg}
+            blob = TextBlob(sentence)
+            polarity = blob.sentiment.polarity
+            # Assuming compound is the overall sentiment polarity
+            sentiments['compound'].append(polarity)
+            # TextBlob does not provide pos/neg scores directly, so we derive them
+            if polarity > 0:
+                sentiments['positive'].append(polarity)
+                sentiments['negative'].append(0)
+            elif polarity < 0:
+                sentiments['negative'].append(polarity)
+                sentiments['positive'].append(0)
+            else:
+                sentiments['positive'].append(0)
+                sentiments['negative'].append(0)
         return sentiments
 
     def sentiment_stats(self, sentiment_analysis):
