@@ -4,8 +4,6 @@ from openai import OpenAI
 from .models import History
 from flask_login import current_user, login_required
 from datetime import datetime
-# from nltk.sentiment import SentimentIntensityAnalyzer
-# from nltk.tokenize import sent_tokenize
 from textblob import TextBlob
 
 from fastcoref import FCoref
@@ -13,7 +11,6 @@ from itertools import islice
 from dotenv import load_dotenv
 import random
 import math
-# import nltk
 import re
 import numpy as np
 import os
@@ -23,16 +20,6 @@ import spotipy
 # import allennlp_models.tagging
 
 
-# nltk.download('vader_lexicon')
-# nltk.download('punkt')
-# nltk.download('averaged_perceptron_tagger')
-# nltk.download('maxent_ne_chunker')
-# nltk.download('words')
-# nltk.download('stopwords')
-
-# from nltk.tag import pos_tag
-# from nltk.chunk import ne_chunk
-# from nltk.corpus import stopwords
 load_dotenv()
 
 main = Blueprint('main', __name__)
