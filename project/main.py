@@ -445,7 +445,7 @@ def save_image():
 @login_required
 def profile():
     user_history = History.query.filter_by(user_id=current_user.id).order_by(History.date_time.desc()).all()
-    return render_template('profile.html', history=user_history)
+    return render_template('profile.html', user=current_user, history=user_history)
 
 
 @main.route('/delete_history/<int:history_id>')
