@@ -5,6 +5,10 @@ from .models import History
 from flask_login import current_user, login_required
 from datetime import datetime
 from textblob import TextBlob
+import boto3
+from botocore.exceptions import NoCredentialsError
+import requests
+import mimetypes
 
 # from fastcoref import FCoref
 # from itertools import islice
@@ -25,6 +29,8 @@ load_dotenv()
 main = Blueprint('main', __name__)
 # Define OpenAI API key
 openai_api_key = os.getenv("OPENAI_API_KEY")
+s3_access_key = os.getenv("ACCESS_KEY_ID")
+s3_secret_key = os.getenv("SECRET_ACCESS_KEY")
 # User credentials and Spotify setup
 spotify_client_id = os.getenv("SPOTIFY_CLIENT_ID")
 spotify_client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
@@ -420,18 +426,41 @@ def home():
     else:
         return render_template('index.html', data=None, user=current_user)
 
+
+def upload_file(remote_url, bucket, file_name):
+    s3 = boto3.client('s3', aws_access_key_id=s3_access_key, aws_secret_access_key=s3_secret_key)
+    try:
+        imageResponse = requests.get(remote_url, stream=True).raw
+        content_type = imageResponse.headers['content-type']
+        extension = mimetypes.guess_extension(content_type)
+        s3.upload_fileobj(imageResponse, bucket, file_name + extension)
+        s3_url = f"https://{bucket}.s3.amazonaws.com/{file_name}{extension}"
+        print("Upload Successful")
+        return s3_url
+        
+    except FileNotFoundError:
+        print("The file was not found")
+        return False
+    except NoCredentialsError:
+        print("Credentials not available")
+        return False
+    
 @main.route('/save_image', methods=['POST'])
 @login_required
 def save_image():
     data = request.json
     img_url = data.get('img_url')
+    file_name = f"{datetime.now().strftime('%Y%m%d%H%M%S%f')}"
+    uploaded = upload_file(img_url, 'mind-pallette-photos', file_name)
+    print("LINKKK S3", uploaded)
+
     diary_entry = data.get('diary_entry')
     song = data.get('song')
 
     new_history = History(
         date_time=datetime.utcnow(),
         diary_entry=diary_entry,
-        generated_image=img_url,
+        generated_image=uploaded,
         song_snippet=song,
         user_id=current_user.id
     )
