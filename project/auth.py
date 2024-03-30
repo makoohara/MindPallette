@@ -35,6 +35,7 @@ def signup():
     if current_user.is_authenticated:
         return redirect(url_for('main.home'))
 
+    print("methodddd aaaaa:", request.method)
     if request.method == 'POST':
         email = request.form.get('email')
         name = request.form.get('name')
