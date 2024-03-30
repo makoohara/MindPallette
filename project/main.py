@@ -461,12 +461,13 @@ def delete_history(history_id):
 
 
 # Create Spotify Object
-spotifyObject = spotipy.Spotify(auth=session['spotify_token'])
 # spotifyObject = spotipy.Spotify(auth=os.environ['SPOTIFY_TOKEN'])
 
 
 def search_and_play_song(search_keyword):
     # Search for the Song.
+    spotifyObject = spotipy.Spotify(auth=session['spotify_token'])
+
     search_results = spotifyObject.search(search_keyword, 1, 0, "track")
     # Get required data from JSON response.
     tracks_dict = search_results['tracks']
