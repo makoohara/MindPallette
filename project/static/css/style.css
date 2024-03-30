@@ -188,11 +188,11 @@ body {
   margin-top: auto;
 }
 
-input[type=checkbox] {
+/* input[type=checkbox] {
   opacity: 0;
   width: 0;
   height: 0;
-}
+} */
 
 .slider {
   position: absolute;
