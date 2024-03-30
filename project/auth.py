@@ -1,19 +1,9 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, session
+from flask import Blueprint, render_template, redirect, url_for, request, flash
 # from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, login_required, logout_user, current_user
 from .models import User
 from . import db
 from flask_bcrypt import Bcrypt
-import spotipy
-from spotipy.oauth2 import SpotifyOAuth
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
-spotify_client_id = os.getenv("SPOTIFY_CLIENT_ID")
-spotify_client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
-spotify_redirect_uri = os.getenv("SPOTIFY_REDIRECT_URI")
-spotify_scope = os.getenv("SPOTIFY_SCOPE")
 
 auth = Blueprint('auth', __name__)
 bcrypt = Bcrypt()
@@ -34,11 +24,6 @@ def login():
 
         login_user(user, remember=remember)
         print("LOGGEEEDDDD", current_user)
-        # Create OAuth Object
-        oauth_object = spotipy.SpotifyOAuth(spotify_client_id, spotify_client_secret, spotify_redirect_uri, scope=spotify_scope)
-        # Create token
-        token_dict = oauth_object.get_access_token()
-        session['spotify_token'] = token_dict['access_token']
         return redirect(url_for('main.home'))
     
     if current_user.is_authenticated:

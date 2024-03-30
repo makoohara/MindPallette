@@ -460,14 +460,18 @@ def delete_history(history_id):
     return redirect(url_for('main.profile'))
 
 
-# Create Spotify Object
 # spotifyObject = spotipy.Spotify(auth=os.environ['SPOTIFY_TOKEN'])
 
 
 def search_and_play_song(search_keyword):
+    # Create OAuth Object
+    oauth_object = spotipy.SpotifyOAuth(spotify_client_id, spotify_client_secret, spotify_redirect_uri, scope=spotify_scope)
+    # Create token
+    token_dict = oauth_object.get_access_token()
+    token = token_dict['access_token']
+    # Create Spotify Object
+    spotifyObject = spotipy.Spotify(auth=token)
     # Search for the Song.
-    spotifyObject = spotipy.Spotify(auth=session['spotify_token'])
-
     search_results = spotifyObject.search(search_keyword, 1, 0, "track")
     # Get required data from JSON response.
     tracks_dict = search_results['tracks']
@@ -502,14 +506,12 @@ def login():
 @main.route('/callback')
 @login_required
 def callback():
-    print("AAAAAA SPOTIFYYY")
-    print(request.args.get('code'))
 
 
     if request.args.get('code'):
         code = request.args.get('code')
-
-        session['spotify_token'] = code
+        token = os.environ['SPOTIFY_TOKEN']
+        session['token'] = token
 
         return redirect(url_for('generate_playlist'))
 
