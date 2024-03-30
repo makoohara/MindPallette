@@ -24,7 +24,7 @@ def login():
 
         login_user(user, remember=remember)
         print("LOGGEEEDDDD", current_user)
-        return redirect(url_for('main.home', user=current_user))
+        return redirect(url_for('main.home'))
     
     if current_user.is_authenticated:
         return redirect(url_for('main.home', user=current_user))  # Assuming 'main.index' is the name of the function that renders your home page
