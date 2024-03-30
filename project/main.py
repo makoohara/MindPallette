@@ -505,8 +505,8 @@ def callback():
 
     if request.args.get('code'):
         code = request.args.get('code')
-        token = os.environ['SPOTIFY_TOKEN']
-        session['token'] = token
+
+        session['spotify_token'] = code
 
         return redirect(url_for('generate_playlist'))
 
