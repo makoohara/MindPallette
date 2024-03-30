@@ -27,7 +27,7 @@ def login():
     
     if current_user.is_authenticated:
         return redirect(url_for('main.home'))  # Assuming 'main.index' is the name of the function that renders your home page
-    return render_template('login.html', user={'is_authenticated': False})
+    return render_template('login.html')
 
 
 @auth.route('/signup', methods=['GET', 'POST'])
