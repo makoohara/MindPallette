@@ -4,9 +4,21 @@ from flask_login import login_user, login_required, logout_user, current_user
 from .models import User
 from . import db
 from flask_bcrypt import Bcrypt
+import os
+
+import spotipy
+from spotipy.oauth2 import SpotifyOAuth
 
 auth = Blueprint('auth', __name__)
 bcrypt = Bcrypt()
+
+# User credentials and Spotify setup
+spotify_client_id = os.getenv("SPOTIFY_CLIENT_ID")
+spotify_client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
+spotify_redirect_uri = "http://google.com/callback/"
+spotify_scope = "user-read-playback-state,user-modify-playback-state"
+
+oauth_object = spotipy.SpotifyOAuth(spotify_client_id, spotify_client_secret, spotify_redirect_uri, scope=spotify_scope)
 
 
 @auth.route('/login', methods=['GET', 'POST'])
@@ -24,7 +36,9 @@ def login():
 
         login_user(user, remember=remember)
         print("LOGGEEEDDDD", current_user)
-        return redirect(url_for('main.home'))
+        auth_url = oauth_object.get_authorize_url()
+        return redirect(auth_url)
+        # return redirect(url_for('main.home'))
     
     if current_user.is_authenticated:
         return redirect(url_for('main.home'))  # Assuming 'main.index' is the name of the function that renders your home page

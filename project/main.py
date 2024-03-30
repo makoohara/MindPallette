@@ -15,7 +15,7 @@ import re
 import numpy as np
 import os
 import spotipy
-# from spotipy.oauth2 import SpotifyOAuth
+from spotipy.oauth2 import SpotifyOAuth
 # from allennlp.predictors.predictor import Predictor
 # import allennlp_models.tagging
 
@@ -460,19 +460,21 @@ def delete_history(history_id):
     return redirect(url_for('main.profile'))
 
 
+# Create OAuth Object
+oauth_object = spotipy.SpotifyOAuth(spotify_client_id, spotify_client_secret, spotify_redirect_uri, scope=spotify_scope)
+# Create token
+# token_dict = oauth_object.get_access_token()
+# token = token_dict['access_token']
 # spotifyObject = spotipy.Spotify(auth=os.environ['SPOTIFY_TOKEN'])
 
 
 def search_and_play_song(search_keyword):
-    # Create OAuth Object
-    oauth_object = spotipy.SpotifyOAuth(spotify_client_id, spotify_client_secret, spotify_redirect_uri, scope=spotify_scope)
-    # Create token
-    token_dict = oauth_object.get_access_token()
-    token = token_dict['access_token']
-    # Create Spotify Object
-    spotifyObject = spotipy.Spotify(auth=token)
+    token_info = session.get('token_info', None)
+    if not token_info:
+        return redirect(url_for('auth.login'))  # User not logged in, redirect to login
+    spotify = spotipy.Spotify(auth=token_info['access_token'])
     # Search for the Song.
-    search_results = spotifyObject.search(search_keyword, 1, 0, "track")
+    search_results = spotify.search(search_keyword, 1, 0, "track")
     # Get required data from JSON response.
     tracks_dict = search_results['tracks']
     tracks_items = tracks_dict['items']
@@ -499,24 +501,16 @@ def play_song():
         return jsonify({'error': 'Request to Spotify API timed out.'}), 504  # Gateway Timeout
 
 
-@main.route('/login')
-def login():
-    return redirect(url_for('main.home'))
+# @main.route('/login')
+# def login():
+#     return redirect(url_for('main.home'))
 
 @main.route('/callback')
-@login_required
 def callback():
-
-
-    if request.args.get('code'):
-        code = request.args.get('code')
-        token = os.environ['SPOTIFY_TOKEN']
-        session['token'] = token
-
-        return redirect(url_for('generate_playlist'))
-
-    else:
-        return redirect(url_for('home'))
+    code = request.args.get('code')
+    token_info = oauth_object.get_access_token(code)
+    session['token_info'] = token_info  # Save the token info in the session
+    return redirect(url_for('main.home'))
     
 @main.route('/')
 @login_required
