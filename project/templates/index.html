@@ -84,6 +84,7 @@
         const song = data.song;
         const imgUrls = data.img_urls;
         const mood = data.mood;
+        console.log("song:", song);
 
         console.log("img:", imgUrls);
         // Generate HTML for each image without inline onclick
@@ -132,7 +133,7 @@
     });
     }
     function saveImage(imgUrl, mood, song) {
-        console.log("Saving image with URL:", imgUrl); // Diagnostic log
+        console.log("Saving image with URL:", imgUrl, mood, song); // Diagnostic log
 
         fetch('/save_image', {
             method: 'POST',
