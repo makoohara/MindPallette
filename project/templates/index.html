@@ -115,7 +115,7 @@
         // Attach event listeners after elements are added to the DOM
         document.querySelectorAll('.save-button').forEach(button => {
             button.addEventListener('click', () => {
-                const url = this.getAttribute('data-url');
+                const url = event.target.getAttribute('data-url'); 
                 saveImage(url, mood, song);
             });
         });
