@@ -116,7 +116,7 @@ class NLPUtils:
         "ain", "aren", "couldn", "didn", "doesn", "hadn", "hasn", "haven", "isn", "ma", "mightn", "mustn",
         "needn", "shan", "shouldn", "wasn", "weren", "won", "wouldn",
         "today", "yesterday", "tomorrow", "day", "night", "morning", "evening"]
-        self.model_path = {'coref': "https://storage.googleapis.com/allennlp-public-models/coref-spanbert-large-2021.03.10.tar.gz"}
+        # self.model_path = {'coref': "https://storage.googleapis.com/allennlp-public-models/coref-spanbert-large-2021.03.10.tar.gz"}
 
 
     # def icon_extraction(self, entry, model_path=None, device='cpu'):
@@ -353,11 +353,16 @@ class OpenAIUtils:
 
 def app_main(request):
     try:
+        print("openai")
         openai_util = OpenAIUtils(openai_api_key=openai_api_key)
+        print("NLPUtils")
         nlp_util = NLPUtils()
+        print("DiaryProcessor")
         processor = DiaryProcessor(openai_util, nlp_util)
         entry = request.json.get('mood')
+        print('entry:', entry)
         processed_data = processor.data_process(entry)
+        print('processed_data:', processed_data)
 
         results = []
         for i in [1, 3]:
