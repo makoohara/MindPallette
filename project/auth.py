@@ -27,14 +27,14 @@ def login():
         return redirect(url_for('main.home'))
     
     if current_user.is_authenticated:
-        return redirect(url_for('main.home', user=current_user))  # Assuming 'main.index' is the name of the function that renders your home page
-    return render_template('login.html', user={'is_authenticated': False})
+        return redirect(url_for('main.home'))  # Assuming 'main.index' is the name of the function that renders your home page
+    return render_template('login.html')
 
 
 @auth.route('/signup', methods=['GET', 'POST'])
 def signup():
     if current_user.is_authenticated:
-        return redirect(url_for('main.home', user=current_user))
+        return redirect(url_for('main.home'))
 
     print("methodddd aaaaa:", request.method)
     if request.method == 'POST':
@@ -46,16 +46,16 @@ def signup():
 
         if user:
             flash('Email address already exists')
-            return redirect(url_for('auth.signup'), user={'is_authenticated': False})
+            return redirect(url_for('auth.signup'))
 
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
         new_user = User(email=email, name=name, password=hashed_password)
 
         db.session.add(new_user)
         db.session.commit()
-        return redirect(url_for('auth.login'), user={'is_authenticated': False})
+        return redirect(url_for('auth.login'))
 
-    return render_template('signup.html', user={'is_authenticated': False})
+    return render_template('signup.html')
 
 
 @auth.route('/logout')
