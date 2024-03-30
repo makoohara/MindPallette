@@ -391,19 +391,27 @@ def app_main(request):
 @main.route('/home', methods=['POST', 'GET'])
 @login_required
 def home():
+    print("METHOOODD:", request.method)
+    
     if request.method == 'POST':
-        # Check the number of saved images
-        saved_images_count = History.query.filter_by(user_id=current_user.id).count()
+        try:
+            # Check the number of saved images
+            saved_images_count = History.query.filter_by(user_id=current_user.id).count()
 
-        # Prompt user to delete history if there are 6 or more saved images
-        if saved_images_count >= 6:
-            data = {'error': 'You have reached the maximum limit of saved images. Please delete one or more history entries.'}
-            return jsonify(data)
-        data = app_main(request)
-        # if status_code != 200:
-        #     return jsonify(data), status_code
-        print('data', data, 'type', type(data))
-        return data
+            # Prompt user to delete history if there are 6 or more saved images
+            if saved_images_count >= 6:
+                data = {'error': 'You have reached the maximum limit of saved images. Please delete one or more history entries.'}
+                return jsonify(data)
+            data = app_main(request)
+            # if status_code != 200:
+            #     return jsonify(data), status_code
+            print('data', data, 'type', type(data))
+            return data
+    
+        except Exception as e:
+            print('Error:', str(e))
+            return jsonify({'error': str(e)}), 500
+        
     else:
         return render_template('index.html', data=None, user=current_user)
 
