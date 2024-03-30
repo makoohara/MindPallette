@@ -90,7 +90,7 @@
         // Generate HTML for each image without inline onclick
         let imagesHtml = imgUrls.map((url, index) => 
             `
-            <div class="card card-${index}" style="position: relative;">
+            <div class="smallcard card-${index}" style="position: relative;">
                   <img class="card-img" src="${url}" alt="Generated Image">
                   <button class="save-button" data-url="${url}" data-mood="${mood}" data-song="${song}">Save</button>
             </div>

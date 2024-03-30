@@ -421,6 +421,24 @@ input:checked + .slider:before {
     aspect-ratio: 1/1.4;
   }
 }
+
+.smallcard {
+  border-radius: 20px;
+  overflow: hidden;
+  max-width: 100%;
+  contain: layout;
+  position: relative;
+  z-index: 1;
+  cursor: pointer;
+  width: auto;
+  aspect-ratio: 1/1;
+}
+@media (max-width: 480px) {
+  .smallcard {
+    aspect-ratio: 1/1.4;
+  }
+}
+
 .save-button {
   display: none;
   position: absolute;
@@ -430,10 +448,10 @@ input:checked + .slider:before {
   font-weight: 600;
   transform: translate(-50%, -50%);
 }
-.card:hover .save-button {
+.smallcard:hover .save-button {
   display: block;
 }
-.card:hover .card-img {
+.smallcard:hover .card-img {
   opacity: 0.6; /* Dim the image */
 }
 
