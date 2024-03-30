@@ -459,13 +459,10 @@ def delete_history(history_id):
     flash('Record deleted.', 'success')
     return redirect(url_for('main.profile'))
 
-# Create OAuth Object
-# oauth_object = spotipy.SpotifyOAuth(spotify_client_id, spotify_client_secret, spotify_redirect_uri, scope=spotify_scope)
-# Create token
-# token_dict = oauth_object.get_access_token()
-# token = token_dict['access_token']
+
 # Create Spotify Object
-spotifyObject = spotipy.Spotify(auth=os.environ['SPOTIFY_TOKEN'])
+spotifyObject = spotipy.Spotify(auth=session['spotify_token'])
+# spotifyObject = spotipy.Spotify(auth=os.environ['SPOTIFY_TOKEN'])
 
 
 def search_and_play_song(search_keyword):
