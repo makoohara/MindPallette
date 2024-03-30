@@ -15,7 +15,7 @@ bcrypt = Bcrypt()
 # User credentials and Spotify setup
 spotify_client_id = os.getenv("SPOTIFY_CLIENT_ID")
 spotify_client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
-spotify_redirect_uri = "https://mind-pallette-3b4746dbff88.herokuapp.com/callback/"
+spotify_redirect_uri = "https://mind-pallette-3b4746dbff88.herokuapp.com/callback"
 spotify_scope = "user-read-playback-state,user-modify-playback-state"
 
 oauth_object = spotipy.SpotifyOAuth(spotify_client_id, spotify_client_secret, spotify_redirect_uri, scope=spotify_scope)
