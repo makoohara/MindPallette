@@ -6,8 +6,8 @@ from flask_login import current_user, login_required
 from datetime import datetime
 from textblob import TextBlob
 
-from fastcoref import FCoref
-from itertools import islice
+# from fastcoref import FCoref
+# from itertools import islice
 from dotenv import load_dotenv
 import random
 import math
@@ -57,7 +57,7 @@ class DiaryProcessor:
     def data_process(self, entry):
         tokenized_sentences = self.nlp_util.tokenize(entry)
         polarity = self.nlp_util.sentiment_analysis(tokenized_sentences)
-        main_icons, sub_icons = self.nlp_util.icon_extraction(entry)
+        # main_icons, sub_icons = self.nlp_util.icon_extraction(entry)
         sentiment_stats = self.nlp_util.sentiment_stats(polarity)
         overall_sentiment = sentiment_stats['overall_sentiment']
         print('overall_sentiment:', overall_sentiment)
@@ -65,11 +65,17 @@ class DiaryProcessor:
         print('scaled_score:', scaled_score)
         # srl_result = self.nlp_util.srl(tokenized_sentences)
         # print('srl_result:', srl_result)
-        icons = {'main_icons': main_icons, "sub_icons": sub_icons}
-        print('icons:', icons)
+        # icons = {'main_icons': main_icons, "sub_icons": sub_icons}
+        # print('icons:', icons)
+        # data = {
+        #     1: {**icons, **{'image_attributes': self.select_image_attributes(scaled_score)}},
+        #     2: {'keywords': icons, 'overall sentiment': overall_sentiment},
+        #     'normalized overall std': sentiment_stats['normalized_overall_std'],
+        #     3: {'text': entry}
+        # }
         data = {
-            1: {**icons, **{'image_attributes': self.select_image_attributes(scaled_score)}},
-            2: {'keywords': icons, 'overall sentiment': overall_sentiment},
+            1: {{'image_attributes': self.select_image_attributes(scaled_score)}},
+            2: {'overall sentiment': overall_sentiment},
             'normalized overall std': sentiment_stats['normalized_overall_std'],
             3: {'text': entry}
         }
@@ -113,37 +119,37 @@ class NLPUtils:
         self.model_path = {'coref': "https://storage.googleapis.com/allennlp-public-models/coref-spanbert-large-2021.03.10.tar.gz"}
 
 
-    def icon_extraction(self, entry, model_path=None, device='cpu'):
-        # Initialize the FCoref model
-        model = FCoref(device=device)
+    # def icon_extraction(self, entry, model_path=None, device='cpu'):
+    #     # Initialize the FCoref model
+    #     model = FCoref(device=device)
     
-        # Predict coreferences
-        preds = model.predict(texts=[entry])
+    #     # Predict coreferences
+    #     preds = model.predict(texts=[entry])
         
-        # Extract clusters as strings
-        clusters = preds[0].get_clusters()
-        print('clusters:', clusters)
-        icons = {}
-        for cluster in clusters:
-            freq = len(cluster)
-            word = cluster[0]
-            if word in self.diary_stop_words:
-                continue
-            icons[word] = freq
+    #     # Extract clusters as strings
+    #     clusters = preds[0].get_clusters()
+    #     print('clusters:', clusters)
+    #     icons = {}
+    #     for cluster in clusters:
+    #         freq = len(cluster)
+    #         word = cluster[0]
+    #         if word in self.diary_stop_words:
+    #             continue
+    #         icons[word] = freq
         
-        # Sort mentions by frequency in descending order
-        sorted_icons_desc = {k: v for k, v in sorted(icons.items(), key=lambda item: item[1], reverse=True)}
+    #     # Sort mentions by frequency in descending order
+    #     sorted_icons_desc = {k: v for k, v in sorted(icons.items(), key=lambda item: item[1], reverse=True)}
 
-        # Selecting main and sub icons based on frequencies
-        main_keyword_index = random.randint(1, 4)
-        sub_keyword_index = main_keyword_index + random.randint(1, 5)
-        main_icons = dict(islice(sorted_icons_desc.items(), 0, main_keyword_index))
-        sub_icons = dict(islice(sorted_icons_desc.items(), main_keyword_index, sub_keyword_index))
-        print('sorted icons:', sorted_icons_desc)
-        print('Main Icons:', main_icons)
-        print('Sub Icons:', sub_icons)
+    #     # Selecting main and sub icons based on frequencies
+    #     main_keyword_index = random.randint(1, 4)
+    #     sub_keyword_index = main_keyword_index + random.randint(1, 5)
+    #     main_icons = dict(islice(sorted_icons_desc.items(), 0, main_keyword_index))
+    #     sub_icons = dict(islice(sorted_icons_desc.items(), main_keyword_index, sub_keyword_index))
+    #     print('sorted icons:', sorted_icons_desc)
+    #     print('Main Icons:', main_icons)
+    #     print('Sub Icons:', sub_icons)
         
-        return main_icons, sub_icons
+    #     return main_icons, sub_icons
 
     def tokenize(self, entry):
         # sentences = sent_tokenize(entry)
@@ -282,10 +288,10 @@ class OpenAIUtils:
             'color': {'dark': 1}
         }
         if pipeline == 1:
-            main_icons = processed_data['main_icons']
-            sub_icons = processed_data['sub_icons']
+            # main_icons = processed_data['main_icons']
+            # sub_icons = processed_data['sub_icons']
             attributes = processed_data['image_attributes']
-            prompt = f"main subjects: {main_icons}, secondary subjects: {sub_icons}, attributes: {attributes}"
+            prompt = f"attributes: {attributes}"
             return prompt
         elif pipeline == 3:
             text = processed_data['text']
