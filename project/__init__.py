@@ -2,7 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 import secrets
-
+import os
 # init SQLAlchemy so we can use it later in our models
 db = SQLAlchemy()
 
@@ -13,7 +13,9 @@ def create_app():
     app = Flask(__name__)
 
     app.config['SECRET_KEY'] = secrets.token_hex(16)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
+    # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL').replace('postgres://', 'postgresql://', 1)
+
 
     db.init_app(app)
 
