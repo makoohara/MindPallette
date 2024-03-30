@@ -501,6 +501,8 @@ def login():
 @main.route('/callback')
 @login_required
 def callback():
+    print("AAAAAA SPOTIFYYY")
+    print(request.args.get('code'))
 
 
     if request.args.get('code'):
