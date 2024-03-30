@@ -54,7 +54,7 @@ def signup():
         db.session.commit()
         return redirect(url_for('auth.login'))
 
-    return render_template('signup.html')
+    return render_template('signup.html', user={'is_authenticated': False})
 
 
 @auth.route('/logout')
