@@ -28,7 +28,7 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 # User credentials and Spotify setup
 spotify_client_id = os.getenv("SPOTIFY_CLIENT_ID")
 spotify_client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
-spotify_redirect_uri = "http://google.com/callback/"
+spotify_redirect_uri = "https://mind-pallette-3b4746dbff88.herokuapp.com/callback/"
 spotify_scope = "user-read-playback-state,user-modify-playback-state"
 
 
