@@ -23,6 +23,7 @@ def login():
             return redirect(url_for('auth.login'))
 
         login_user(user, remember=remember)
+        print("LOGGEEEDDDD", current_user)
         return redirect(url_for('main.home', user=current_user))
     
     if current_user.is_authenticated:
