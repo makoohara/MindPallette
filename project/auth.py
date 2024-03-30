@@ -62,5 +62,5 @@ def signup():
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('main.home', user={'is_authenticated': False}))
+    return redirect(url_for('main.home'))
 
