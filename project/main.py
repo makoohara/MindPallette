@@ -74,7 +74,7 @@ class DiaryProcessor:
         #     3: {'text': entry}
         # }
         data = {
-            1: {{'image_attributes': self.select_image_attributes(scaled_score)}},
+            1: {'image_attributes': self.select_image_attributes(scaled_score)},
             2: {'overall sentiment': overall_sentiment},
             'normalized overall std': sentiment_stats['normalized_overall_std'],
             3: {'text': entry}
