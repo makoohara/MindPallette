@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, abort
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, abort, session
 from . import db
 from openai import OpenAI
 from .models import History
@@ -501,7 +501,21 @@ def play_song():
 def login():
     return redirect(url_for('main.home'))
 
+@main.route('/callback')
+@login_required
+def callback():
 
+
+    if request.args.get('code'):
+        code = request.args.get('code')
+        token = os.environ['SPOTIFY_TOKEN']
+        session['token'] = token
+
+        return redirect(url_for('generate_playlist'))
+
+    else:
+        return redirect(url_for('home'))
+    
 @main.route('/')
 @login_required
 def redirect_to_profile():
