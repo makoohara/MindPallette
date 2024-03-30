@@ -28,6 +28,7 @@ oauth_object = spotipy.SpotifyOAuth(client_id, client_secret, redirect_uri, scop
 # Create token
 token_dict = oauth_object.get_access_token()
 token = token_dict['access_token']
+print(token)
 # Create Spotify Object
 spotifyObject = spotipy.Spotify(auth=token)
 
