@@ -433,7 +433,7 @@ def upload_file(remote_url, bucket, file_name):
         imageResponse = requests.get(remote_url, stream=True).raw
         content_type = imageResponse.headers['content-type']
         extension = mimetypes.guess_extension(content_type)
-        s3.upload_fileobj(imageResponse, bucket, file_name + extension, ExtraArgs={'ACL': 'public-read'})
+        s3.upload_fileobj(imageResponse, bucket, file_name + extension)
         s3_url = f"https://{bucket}.s3.amazonaws.com/{file_name}{extension}"
         print("Upload Successful")
         return s3_url
