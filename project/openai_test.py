@@ -28,7 +28,7 @@ def pipeline3(text):
                     'color': {'dark': 1}}
     prompt = f"Return parameters for a Dalle prompt based on this diary {text}. The example parameter is here: {parameters}."
     song_response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4o-mini",
         messages=[{"role": "system", "content": system_msg},
                     {"role": "user", "content": prompt}],
         temperature=0,

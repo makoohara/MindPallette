@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, abort
+from flask import Flask, Blueprint, render_template, request, jsonify, redirect, url_for, flash, abort
 from . import db
 from openai import OpenAI
 from .models import History
@@ -33,7 +33,8 @@ spotify_client_id = os.getenv("SPOTIFY_CLIENT_ID")
 spotify_client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
 spotify_redirect_uri = "http://google.com/callback/"
 spotify_scope = "user-read-playback-state,user-modify-playback-state"
-
+app = Flask(__name__)
+# app.register_blueprint(main)
 
 class DiaryProcessor:
 
@@ -59,14 +60,10 @@ class DiaryProcessor:
         return image_attributes
 
     def data_process(self, entry):
-        print('data processing')
         tokenized_sentences = self.nlp_util.tokenize(entry)
-        print('tokenized_sentences:', tokenized_sentences)
         polarity = self.nlp_util.sentiment_analysis(tokenized_sentences)
-        print('polarity:', polarity)
 
         main_icons, sub_icons = self.nlp_util.icon_extraction(entry)
-        print('main_icons:', main_icons, 'sub_icons:', sub_icons)
         sentiment_stats = self.nlp_util.sentiment_stats(polarity)
         overall_sentiment = sentiment_stats['overall_sentiment']
         print('overall_sentiment:', overall_sentiment)
@@ -121,40 +118,31 @@ class NLPUtils:
         "ain", "aren", "couldn", "didn", "doesn", "hadn", "hasn", "haven", "isn", "ma", "mightn", "mustn",
         "needn", "shan", "shouldn", "wasn", "weren", "won", "wouldn",
         "today", "yesterday", "tomorrow", "day", "night", "morning", "evening"]
-        
         self.model_path = {'srl': "https://storage.googleapis.com/allennlp-public-models/structured-prediction-srl-bert.2020.12.15.tar.gz",
-                            "coref": "https://storage.googleapis.com/allennlp-public-models/coref-spanbert-large-2021.03.10.tar.gz"}
+                            'coref': "https://storage.googleapis.com/allennlp-public-models/coref-spanbert-large-2021.03.10.tar.gz"}
 
     def icon_extraction(self, entry):
-        print('extracting icons')
-        try:
-            COREF_MODEL_PATH = self.model_path['coref']
-            predictor = Predictor.from_path(COREF_MODEL_PATH)
-            predictions = predictor.predict(document=entry)
-            print('coref predictions:', predictions)
-            document = predictions['document']
-            icons = dict()
-            clusters = predictions['clusters']
-            for cluster in clusters:
-                freq = len(cluster)
-                cluster_index = cluster[0]
-                word = " ".join(document[cluster_index[0]:cluster_index[1]+1])
-                if word in self.diary_stop_words:
-                    continue
-                icons[word] = freq
-            sorted_icons_desc = {word: freq for word, freq in sorted(icons.items(), key=lambda item: item[1], reverse=True)}
-            # make the abstraction random
-            main_keyword_index = random.randint(1, 3)
-            sub_keyword_index = main_keyword_index + random.randint(1, 3)
-            main_icons = dict(islice(sorted_icons_desc.items(), 0, main_keyword_index))
-            sub_icons = dict(islice(sorted_icons_desc.items(), main_keyword_index, sub_keyword_index))
-            print('main_icons:', main_icons, 'sub_icons:', sub_icons)
-            return main_icons, sub_icons
-        except Exception as e:
-            # Handling errors by sending an error response
-            print('Error processing icon extraction', str(e))
-            return jsonify({'NLP icon extraction error': str(e)}), 500
-        
+        COREF_MODEL_PATH = self.model_path['coref']
+        predictor = Predictor.from_path(COREF_MODEL_PATH)
+        predictions = predictor.predict(document=entry)
+        document = predictions['document']
+        icons = dict()
+        clusters = predictions['clusters']
+        for cluster in clusters:
+            freq = len(cluster)
+            cluster_index = cluster[0]
+            word = " ".join(document[cluster_index[0]:cluster_index[1]+1])
+            if word in self.diary_stop_words:
+                continue
+            icons[word] = freq
+        sorted_icons_desc = {word: freq for word, freq in sorted(icons.items(), key=lambda item: item[1], reverse=True)}
+        # make the abstraction random
+        main_keyword_index = random.randint(1, 3)
+        sub_keyword_index = main_keyword_index + random.randint(1, 3)
+        main_icons = dict(islice(sorted_icons_desc.items(), 0, main_keyword_index))
+        sub_icons = dict(islice(sorted_icons_desc.items(), main_keyword_index, sub_keyword_index))
+        print('main_icons:', main_icons, 'sub_icons:', sub_icons)
+        return main_icons, sub_icons
 
     def tokenize(self, entry):
         sentences = sent_tokenize(entry)
@@ -240,7 +228,7 @@ class OpenAIUtils:
     def query(self, system_msg, prompt):
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": system_msg},
                     {"role": "user", "content": prompt}
@@ -350,19 +338,17 @@ def app_main(request):
         nlp_util = NLPUtils()
         processor = DiaryProcessor(openai_util, nlp_util)
         entry = request.json.get('mood')
-        print('entry:', entry)
         processed_data = processor.data_process(entry)
-        print('processed data:', processed_data)
 
         results = []
-        for i in range(1, 5):
+        for i in range(1, 4):
             pipeline = i
             data = processed_data[i]
             print('pipeline', i, data)
             
             prompt = openai_util.generate_parameters(data, pipeline)
 
-            if i == 3 or i == 4:
+            if i == 3:
                 prompt = processor.output_cleaning(prompt)
 
             print('prompt', i, prompt, type(prompt))
@@ -373,25 +359,25 @@ def app_main(request):
             results.append(str(result))
 
         song = openai_util.recommend_song(entry)
-        print("song object", song, type(song), 'img_urls', results)
+        print("song object", song, type(song))
         return {'song': song, 'img_urls': results}
 
     except Exception as e:
         # Handling errors by sending an error response
-        print ('Error:', str(e))
         return jsonify({'error': str(e)}), 500
 
 
-@main.route('/home', methods=['POST', 'GET'])
-@login_required
+@main.route('/api/home', methods=['POST', 'GET'])
+# @login_required
 def home():
     if request.method == 'POST':
         data = app_main(request)
         return jsonify(data)
     else:
-        return render_template('index.html', data=None, user=current_user)
+        return jsonify({'message': 'GET method is not supported on this endpoint'}), 405
 
-@main.route('/save_image', methods=['POST'])
+
+@main.route('/api/save_image', methods=['POST'])
 @login_required
 def save_image():
     data = request.json
@@ -409,17 +395,30 @@ def save_image():
     db.session.add(new_history)
     db.session.commit()
 
-    return render_template('profile.html', data=None, user=current_user)
+    return jsonify({'message': 'Image data saved successfully on db'}), 201
 
 
-@main.route('/profile')
+@main.route('/api/profile')
 @login_required
 def profile():
     user_history = History.query.filter_by(user_id=current_user.id).order_by(History.date_time.desc()).all()
-    return render_template('profile.html', user=current_user, history=user_history)
+    
+    history_list = [
+        {
+            'id': record.id,
+            'date_time': record.date_time.isoformat(),
+            'diary_entry': record.diary_entry,
+            'generated_image': record.generated_image,
+            'song_snippet': record.song_snippet
+        }
+        for record in user_history
+    ]
+    
+    return jsonify({'user': user_history, 'history': history_list})
 
 
-@main.route('/delete_history/<int:history_id>')
+
+@main.route('/api/delete_history/<int:history_id>', methods=['DELETE'])
 @login_required
 def delete_history(history_id):
     record = History.query.get_or_404(history_id)
@@ -427,8 +426,8 @@ def delete_history(history_id):
         abort(403)  # Forbidden access
     db.session.delete(record)
     db.session.commit()
-    flash('Record deleted.', 'success')
-    return redirect(url_for('main.profile'))
+    return jsonify({'message': 'Record deleted successfully'}), 200
+
 
 # Create OAuth Object
 oauth_object = spotipy.SpotifyOAuth(spotify_client_id, spotify_client_secret, spotify_redirect_uri, scope=spotify_scope)
@@ -451,7 +450,7 @@ def search_and_play_song(search_keyword):
         return None
 
 
-@main.route('/playsong', methods=['POST'])
+@main.route('/api/playsong', methods=['POST'])
 @login_required
 def play_song():
     data = request.json
@@ -468,12 +467,23 @@ def play_song():
         return jsonify({'error': 'Request to Spotify API timed out.'}), 504  # Gateway Timeout
 
 
-@main.route('/login')
-def login():
-    return redirect(url_for('main.home'))
+@main.route('/api/login', methods=['POST'])
+def api_login():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+    user = User.query.filter_by(username=username).first()
+    if user and user.check_password(password):
+        login_user(user)
+        return jsonify({'message': 'Logged in successfully'}), 200
+    else:
+        return jsonify({'message': 'Invalid credentials'}), 401
 
-
-@main.route('/')
+@main.route('/api/profile_redirect', methods=['GET'])
 @login_required
-def redirect_to_profile():
-    return redirect(url_for('auth.login'))
+def api_redirect_to_profile():
+    return jsonify({'message': 'Redirect to profile', 'profile_url': url_for('/api/profile')}), 200
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
