@@ -9,3 +9,4 @@ project/.env
 spotipy_test.py
 project/openai_test.py
 project/allenNLP.py
+for_tests
