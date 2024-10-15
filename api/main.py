@@ -13,13 +13,13 @@ import numpy as np
 from dotenv import load_dotenv
 import os
 import spotipy
+from spotipy.oauth2 import SpotifyClientCredentials
 from allennlp.predictors.predictor import Predictor
 from nltk.sentiment import SentimentIntensityAnalyzer
 from nltk.tokenize import sent_tokenize
 
 nltk.download('vader_lexicon')
 nltk.download('punkt')
-
 nltk.download('words')
 
 
@@ -29,8 +29,8 @@ main = Blueprint('main', __name__)
 # Define OpenAI API key
 openai_api_key = os.getenv("OPENAI_API_KEY")
 # User credentials and Spotify setup
-spotify_client_id = os.getenv("SPOTIFY_CLIENT_ID")
-spotify_client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
+spotify_client_id = os.getenv("SPOTIPY_CLIENT_ID")
+spotify_client_secret = os.getenv("SPOTIPY_CLIENT_SECRET")
 spotify_redirect_uri = "http://google.com/callback/"
 spotify_scope = "user-read-playback-state,user-modify-playback-state"
 app = Flask(__name__)
@@ -430,20 +430,21 @@ def delete_history(history_id):
 
 
 # Create OAuth Object
-oauth_object = spotipy.SpotifyOAuth(spotify_client_id, spotify_client_secret, spotify_redirect_uri, scope=spotify_scope)
-# Create token
-token_dict = oauth_object.get_access_token()
-token = token_dict['access_token']
+# oauth_object = spotipy.SpotifyOAuth(spotify_client_id, spotify_client_secret, spotify_redirect_uri, scope=spotify_scope)
+# # Create token
+# token_dict = oauth_object.get_access_token()
+# token = token_dict['access_token']
 # Create Spotify Object
-spotifyObject = spotipy.Spotify(auth=token)
+spotify = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials())
+
 
 
 def search_and_play_song(search_keyword):
     # Search for the Song.
-    search_results = spotifyObject.search(search_keyword, 1, 0, "track")
+    search_results = spotify.search(search_keyword, 1, 0, "track")
     # Get required data from JSON response.
-    tracks_dict = search_results['tracks']
-    tracks_items = tracks_dict['items']
+    track = search_results['tracks']
+    tracks_items = track['items']
     if tracks_items:
         return tracks_items[0]['external_urls']['spotify']
     else:
@@ -485,5 +486,5 @@ def api_redirect_to_profile():
     return jsonify({'message': 'Redirect to profile', 'profile_url': url_for('/api/profile')}), 200
 
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# if __name__ == '__main__':
+#     app.run(debug=True)
