@@ -1,4 +1,4 @@
-from flask import Flask, Blueprint, render_template, request, jsonify, redirect, url_for, flash, abort
+from flask import Flask, Blueprint, request, jsonify, url_for, abort
 from . import db
 from openai import OpenAI
 from .models import History
