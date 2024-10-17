@@ -1,12 +1,14 @@
 
-diary_mvp/project/.env
-project/.DS_Store
-project/.env
 .venv
 .env
 .gitignore
 .cache
 spotipy_test.py
+load_models.py
+index.html
+package-lock.json
+packages.txt
+package-endpoint.json
 project/openai_test.py
 project/allenNLP.py
 for_tests

@@ -2,5 +2,8 @@
 .gitignore
 .cache
 spotipy_test.py
-project/openai_test.py
-project/allenNLP.py
+load_models.py
+index.html
+package-lock.json
+packages.txt
+package-endpoint.json
