@@ -1,30 +1,38 @@
-# Start with a Miniconda base image
-FROM continuumio/miniconda3:latest
+FROM python:3.9-slim
 
-# Set the working directory in the container
+# Set the working directory
 WORKDIR /usr/src/app
 
-# Install Python 3.8, AllenNLP, and additional AllenNLP packages using Conda from the conda-forge channel
-# RUN conda install -c conda-forge -y python=3.9 allennlp allennlp-models
+# Install necessary build tools and libraries via apt
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    g++
+RUN apt-get update && apt-get install -y \
+    python3-dev \
+    libffi-dev \
+    libssl-dev \
+    cython3 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Optionally, install any additional AllenNLP plugins or optional packages as needed
-# RUN conda install -c conda-forge allennlp-semparse allennlp-server allennlp-optuna
+# Use conda to install Cython and other Python-related dependencies
+# RUN conda install -y cython
 
-# Copy the requirements file and install any additional Python dependencies not covered by Conda
+# Upgrade pip, setuptools, and wheel
+RUN pip3 install --upgrade pip setuptools wheel
+
+# Copy requirements.txt and install Python dependencies via pip
 COPY requirements.txt .
-# Ensure pip is up to date and install any requirements not covered by the Conda installation above
-RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of your application code
 COPY . .
+# COPY api api/
+# COPY bot bot/
 
-# Expose the port the app runs on
-EXPOSE 5000
-
-# Set environment variables for Flask
-ENV FLASK_APP=project
+ENV FLASK_APP=api
 ENV FLASK_ENV=development
 
 # Command to run the Flask application
 CMD ["flask", "run", "--host=0.0.0.0"]
+
