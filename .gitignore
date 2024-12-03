@@ -14,3 +14,7 @@ project/allenNLP.py
 for_tests
 requirements.extra.txt
 bot/requirements.txt
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
