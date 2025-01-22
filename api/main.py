@@ -33,8 +33,6 @@ spotify_client_id = os.getenv("SPOTIPY_CLIENT_ID")
 spotify_client_secret = os.getenv("SPOTIPY_CLIENT_SECRET")
 spotify_redirect_uri = "http://google.com/callback/"
 spotify_scope = "user-read-playback-state,user-modify-playback-state"
-app = Flask(__name__)
-# app.register_blueprint(main)
 
 class DiaryProcessor:
 
