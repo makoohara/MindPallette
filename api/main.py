@@ -484,5 +484,10 @@ def api_redirect_to_profile():
     return jsonify({'message': 'Redirect to profile', 'profile_url': url_for('/api/profile')}), 200
 
 
+@main.route('/')
+def index():
+    return jsonify({'message': 'Welcome to MindPallette API'}), 200
+
+
 # if __name__ == '__main__':
 #     app.run(debug=True)
