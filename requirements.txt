@@ -1,5 +1,6 @@
 allennlp==2.10.1
 allennlp-models==2.10.1
+aiohttp==3.8.6
 bcrypt==4.1.2
 discord.py
 Flask==2.3.3

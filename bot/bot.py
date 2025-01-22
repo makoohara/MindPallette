@@ -3,26 +3,21 @@ import discord
 import asyncio
 import re
 import datetime
+import aiohttpy
 from discord import ui, app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
-from api.main import DiaryProcessor, NLPUtils, OpenAIUtils  # Import your utilities from API
 
 # Load environment variables
 load_dotenv()
 
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+API_URL = os.getenv('API_URL')  # Add this to your .env file
 
 # Set up intents and bot client
 intents = discord.Intents.default()
 intents.message_content = True
 client = commands.Bot(command_prefix='!', intents=intents, case_insensitive=True)
-
-# Initialize API utilities
-openai_util = OpenAIUtils(OPENAI_API_KEY)
-nlp_util = NLPUtils()
-processor = DiaryProcessor(openai_util, nlp_util)
 
 start_time = datetime.datetime.now(datetime.timezone.utc)
 
@@ -33,16 +28,25 @@ processing_embed = discord.Embed(
     color=discord.Color.orange()
 )
 
-# Mock function to simulate image generation and song recommendation
+# Function to process diary entry through API
 async def process_diary_entry(entry: str):
-    await asyncio.sleep(2)  # Simulate processing time
-
-    # Mock Data
-    image_url = "https://example.com/mock_image.png"
-    song_url = "https://open.spotify.com/track/mock_song_id"
-    
-    return image_url, song_url
-
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.post(f"{API_URL}/api/home", json={"mood": entry}) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    # Extract image URL and song from API response
+                    image_urls = data.get('img_urls', [])
+                    song = data.get('song', '')
+                    
+                    # Return the first image URL (or None) and the song
+                    return image_urls[0] if image_urls else None, song
+                else:
+                    print(f"API Error: Status {response.status}")
+                    return None, None
+        except Exception as e:
+            print(f"Error processing diary entry: {e}")
+            return None, None
 
 # Button to retry diary processing
 class RetryButton(ui.View):
@@ -59,37 +63,35 @@ class RetryButton(ui.View):
 
         button.disabled = True
         await interaction.response.edit_message(embed=processing_embed, view=self)
-        image_url, song_url = await process_diary_entry(self.entry)
+        image_url, song = await process_diary_entry(self.entry)
 
-        if image_url and song_url:
+        if image_url and song:
             embed = discord.Embed(title="Diary Processed", color=discord.Color.blue())
             embed.set_image(url=image_url)
-            embed.add_field(name="Listen to this song", value=f"[Spotify Link]({song_url})", inline=False)
+            embed.add_field(name="Recommended Song", value=song, inline=False)
             
             button.disabled = False
             await interaction.edit_original_response(embed=embed, view=self)
         else:
-            await interaction.response.edit_message(content="Failed to process diary entry.", embed=None)
+            await interaction.edit_original_response(content="Failed to process diary entry.", embed=None)
 
-
-# Command to process a diary entry and generate image/song recommendation
+# Command to process a diary entry
 @client.command(name="diary")
 async def diary(ctx, *, entry: str):
     message = await ctx.send(embed=processing_embed)
 
-    # Simulate the diary processing and generate image and song (mock data for now)
-    image_url, song_url = await process_diary_entry(entry)
+    # Process the diary entry through the API
+    image_url, song = await process_diary_entry(entry)
 
-    if image_url and song_url:
+    if image_url and song:
         view = RetryButton(entry, user_id=ctx.author.id)
         embed = discord.Embed(title="Diary Processed", color=discord.Color.blue())
         embed.set_image(url=image_url)
-        embed.add_field(name="Listen to this song", value=f"[Spotify Link]({song_url})", inline=False)
+        embed.add_field(name="Recommended Song", value=song, inline=False)
 
         await message.edit(embed=embed, view=view)
     else:
         await message.edit(content="Failed to process diary entry.", embed=None)
-
 
 # Custom info command to list all available bot commands
 @client.command(name="info", help="Lists all available bot commands")
@@ -115,7 +117,6 @@ async def info(ctx):
 
     await ctx.send(embed=embed)
 
-
 # Bot statistics command (fixing 'tree' issue by using @client.command)
 @client.command(name="stats", help="Get bot statistics")
 async def stats(ctx):
@@ -130,13 +131,11 @@ async def stats(ctx):
     )
     await ctx.send(embed=embed)
 
-
 # On bot ready
 @client.event
 async def on_ready():
     print(f'Logged in as {client.user.name}')
     await client.tree.sync()
-
 
 # On message mention
 @client.event
@@ -154,6 +153,5 @@ async def on_message(message):
         await message.channel.send(embed=embed)
     
     await client.process_commands(message)
-
 
 client.run(DISCORD_TOKEN)
