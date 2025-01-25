@@ -3,7 +3,7 @@ import discord
 import asyncio
 import re
 import datetime
-import aiohttpy
+import aiohttp
 from discord import ui, app_commands
 from discord.ext import commands
 from dotenv import load_dotenv

@@ -370,6 +370,7 @@ def app_main(request):
 def home():
     if request.method == 'POST':
         data = app_main(request)
+        print('data', data)
         return jsonify(data)
     else:
         return jsonify({'message': 'GET method is not supported on this endpoint'}), 405
